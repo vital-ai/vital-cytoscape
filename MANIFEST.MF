@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1374854437778
+Build-Jdk: 1.7.0
+Built-By: Derek
+Bundle-Activator: ai.vital.cytoscape.app.internal.CyActivator
+Bundle-ManifestVersion: 2
+Bundle-Name: ai.vital.cytoscape.app
+Bundle-SymbolicName: ai.vital.cytoscape.app
+Bundle-Version: 0.0.1.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Import-Package: javax.swing,javax.swing.border,org.cytoscape.applicati
+ on;version="[3.0,4)",org.cytoscape.application.swing;version="[3.0,4)",
+ org.cytoscape.service.util;version="[3.0,4)",org.cytoscape.view.model;v
+ ersion="[3.0,4)",org.osgi.framework;version="[1.5,2)",org.w3c.dom,groov
+ y.lang
+DynamicImport-Package: *
+Export-Package: ai.vital.domain,ai.vital.vitalsigns
+Tool: Bnd-1.50.0

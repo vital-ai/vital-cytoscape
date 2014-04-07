@@ -1,0 +1,106 @@
+<project name="VitalCytoscapePlugin" default="main">
+
+	<property environment="env" />
+	<fail unless="env.VITAL_HOME" message="VITAL_HOME env variable not set!" />
+	<property name="VITAL_HOME" value="${env.VITAL_HOME}" />
+	<echo message="VITAL_HOME: ${VITAL_HOME}" />
+	
+	<property name="maven.command" value="mvn" />
+	
+	<property name="maven.dist.jar" value="${basedir}/target/app-0.0.1-SNAPSHOT.jar" />
+	
+	<property name="src-classes" value="${basedir}/local-repo/unjar-new" />
+	
+	<property name="build.dir" value="${basedir}/build" />
+	
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.5-SNAPSHOT.jar" />
+	
+	<target name="install-mvn-dependencies">
+		
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=ai.vital" />
+			<arg value="-DartifactId=VitalSigns" />
+			<arg value="-Dversion=0.1.0" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/command/VitalSigns-0.1.0.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+				
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=ai.vital" />
+			<arg value="-DartifactId=VitalDomain" />
+			<arg value="-Dversion=0.1.0" />
+			<arg value="-Dfile=${VITAL_HOME}/vital-domain/VitalDomain-groovy-0.1.0.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+				
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=ai.vital" />
+			<arg value="-DartifactId=VitalService" />
+			<arg value="-Dversion=0.1.0" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalservice/VitalService-0.1.0.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+	
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=ai.vital" />
+			<arg value="-DartifactId=VitalCommon" />
+			<arg value="-Dversion=0.1.0" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalcommon/vital-common-0.1.0.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=ai.vital" />
+			<arg value="-DartifactId=VitalLucene" />
+			<arg value="-Dversion=0.1.0" />
+			<arg value="-Dfile=${VITAL_HOME}/vital-lucene/vital-lucene-0.1.0.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+		
+	</target>
+	
+	<target name="main" depends="install-mvn-dependencies">
+	
+		<!-- build the project with maven -->
+		<exec executable="${maven.command}">
+			<arg value="install" />
+		</exec>
+		
+		<delete dir="${dist.jar}"/>
+		
+		<!-- build one huge jar with all the dependencies from VITAL_HOME -->
+		<jar destfile="${dist.jar}" manifest="${basedir}/MANIFEST.MF">
+			
+			<zipfileset src="${maven.dist.jar}" />
+			
+			<zipgroupfileset dir="${VITAL_HOME}">
+				<include name="vitalsigns/command/VitalSigns-*.jar" />
+				<include name="vitalsigns/lib/jena-core-*.jar" />
+				<include name="vitalsigns/lib/jena-iri-*.jar" />
+				<include name="vitalsigns/lib/icu4j-*.jar" />
+				<include name="vitalsigns/lib/xercesImpl-*.jar" />
+				<include name="vital-domain/VitalDomain-groovy-*.jar" />
+				<include name="vital-domain/VitalDomain-groovy-*.jar" />
+				<include name="vitalcommon/vital-common-*.jar" />
+				<include name="vitalcommon/vital-common-*.jar" />
+				<include name="vital-lucene/vital-lucene-*.jar" />
+				<include name="vital-lucene/lib/trove-*/*.jar" />
+				<include name="vitalservice/VitalService-*.jar" />
+				<include name="vitalservice/lib/config-*/*.jar" />
+			</zipgroupfileset>
+			
+		</jar>
+		
+	</target>
+	
+</project>

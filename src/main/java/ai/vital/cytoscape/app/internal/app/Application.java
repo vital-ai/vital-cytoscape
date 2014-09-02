@@ -3,6 +3,7 @@ package ai.vital.cytoscape.app.internal.app;
 import java.awt.Color;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -61,7 +62,10 @@ public class Application {
 		if(singleton != null) return;
 		singleton = new Application();
 		
+		o("$VITAL_HOME: " + System.getenv("VITAL_HOME"));
 		o("Checking vital singleton...");
+		VitalSigns vs = VitalSigns.get();
+		o("Singleton obtained, registering ontology...");
 		VitalSigns.get().registerOntology(new VitalOntology());
 		
 	}
@@ -139,8 +143,8 @@ public class Application {
 	}
 
 	public String getInitialURL() {
-//		return "http://127.0.0.1:9080";
-		return "http://dataserver.moderni.st:80";
+		return "http://127.0.0.1:9080";
+//		return "http://dataserver.moderni.st:80";
 	}
 
 	public ResultList search(VitalSelectQuery sq) throws Exception {
@@ -168,7 +172,7 @@ public class Application {
 		List<ResultElement> li = new ArrayList<ResultElement>();
 		rs.setResults(li);
 		try {
-			GraphObject graphObjectExpanded = Factory.getVitalService().getExpanded(VitalURI.withString(uri_str), getWordnetSegment());
+			GraphObject graphObjectExpanded = Factory.getVitalService().getExpandedInSegments(VitalURI.withString(uri_str), Arrays.asList(getWordnetSegment()) );
 //			o("Expanded: " + graphObjectExpanded);
 			if(graphObjectExpanded instanceof VITAL_Node) {
 				VITAL_Node n = (VITAL_Node) graphObjectExpanded;

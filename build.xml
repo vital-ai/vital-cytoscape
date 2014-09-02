@@ -13,7 +13,7 @@
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.5-SNAPSHOT.jar" />
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.7-SNAPSHOT.jar" />
 	
 	<target name="install-mvn-dependencies">
 		
@@ -69,7 +69,7 @@
 		
 	</target>
 	
-	<target name="main" depends="install-mvn-dependencies">
+	<target name="main" depends="">
 	
 		<!-- build the project with maven -->
 		<exec executable="${maven.command}">
@@ -85,19 +85,29 @@
 			
 			<zipgroupfileset dir="${VITAL_HOME}">
 				<include name="vitalsigns/command/VitalSigns-*.jar" />
+				<include name="vitalsigns/lib/groovy-2.3.6/*.jar" />
+				<include name="vitalsigns/lib/commons-codec-*.jar" />
+				<include name="vitalsigns/lib/commons-io-*.jar" />
+				<include name="vitalsigns/lib/commons-lang3-*.jar" />
+				<include name="vitalsigns/lib/commons-logging-*.jar" />
+				<include name="vitalsigns/lib/config-*.jar" />
+				<include name="vitalsigns/lib/jackson-*.jar" />
 				<include name="vitalsigns/lib/jena-core-*.jar" />
 				<include name="vitalsigns/lib/jena-iri-*.jar" />
 				<include name="vitalsigns/lib/icu4j-*.jar" />
+				<include name="vitalsigns/lib/log4j-*.jar" />
+				<include name="vitalsigns/lib/lucene-*.jar" />
+				<include name="vitalsigns/lib/trove-*.jar" />
 				<include name="vitalsigns/lib/xercesImpl-*.jar" />
 				<include name="vital-domain/VitalDomain-groovy-*.jar" />
-				<include name="vital-domain/VitalDomain-groovy-*.jar" />
-				<include name="vitalcommon/vital-common-*.jar" />
-				<include name="vitalcommon/vital-common-*.jar" />
 				<include name="vital-lucene/vital-lucene-*.jar" />
-				<include name="vital-lucene/lib/trove-*/*.jar" />
 				<include name="vitalservice/VitalService-*.jar" />
-				<include name="vitalservice/lib/config-*/*.jar" />
+				
 			</zipgroupfileset>
+			
+			<!-- <zipfileset src="D:/lib/groovy/groovy-2.3.6/embeddable/groovy-all-2.3.6-indy.jar" /> -->
+			
+			<!-- <zipfileset src="D:/lib/groovy/groovy-2.2.2/embeddable/groovy-all-2.2.2-indy.jar" /> -->
 			
 		</jar>
 		

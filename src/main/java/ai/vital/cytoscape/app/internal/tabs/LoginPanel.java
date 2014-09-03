@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -20,6 +21,11 @@ import javax.swing.border.TitledBorder;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
+import ai.vital.vitalservice.query.ResultElement;
+import ai.vital.vitalservice.query.ResultList;
+import ai.vital.vitalservice.query.VitalSelectQuery;
+import ai.vital.vitalservice.query.VitalTypeConstraint;
+import ai.vital.vitalsigns.VitalSigns;
 
 
 
@@ -221,6 +227,21 @@ public class LoginPanel extends JPanel  implements LoginListener {
 		add(logoutButtonPanelRow);
 		//loggedInInfo.setText("<html>You're logged in as <b>" + Application.get().getLogin() + "</b></html>");
 		URLField.setEnabled(false);
+		
+		/* XXX DEBUG section
+		String s = "DEBUG - " + VitalSigns.get().getNs2Package().keySet().toString();
+		VitalSelectQuery selectQuery = new VitalSelectQuery();
+		
+		selectQuery.getComponents().add(new VitalTypeConstraint("http://vital.ai/ontology/TestOntology.owl#TestDocument"));
+		ResultList rl = VitalSigns.get().doSelectQuery("http://vital.ai/ontology/TestOntology.owl", selectQuery);
+		
+		s+= ("size: " + rl.getResults().size() + " ");		
+		for(ResultElement el : rl.getResults()) {
+			s += (el.getGraphObject().toString());
+		}
+		
+		JOptionPane.showMessageDialog(null, s);
+		*/
 	}
 
 	public void onLogout() {

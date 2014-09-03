@@ -1,31 +1,32 @@
 package ai.vital.cytoscape.app.internal.app;
 
-import java.awt.Color;
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
-import ai.vital.domain.AdjectiveSynsetNode;
-import ai.vital.domain.AdverbSynsetNode;
-import ai.vital.domain.NounSynsetNode;
-import ai.vital.domain.VerbSynsetNode;
-import ai.vital.domain.ontology.VitalOntology;
+import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.vitalservice.exception.VitalServiceException;
+import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.Factory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
+import ai.vital.vitalservice.query.VitalPropertyConstraint;
+import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
+import ai.vital.vitalservice.query.VitalQueryContainer;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.datatype.VitalURI;
 import ai.vital.vitalsigns.global.GlobalHashTable;
 import ai.vital.vitalsigns.model.GraphObject;
+import ai.vital.vitalsigns.model.URIPropertyValue;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class Application {
 
@@ -62,11 +63,33 @@ public class Application {
 		if(singleton != null) return;
 		singleton = new Application();
 		
-		o("$VITAL_HOME: " + System.getenv("VITAL_HOME"));
+		String vitalHome = System.getenv("VITAL_HOME");
+		o("$VITAL_HOME: " + vitalHome);
 		o("Checking vital singleton...");
 		VitalSigns vs = VitalSigns.get();
-		o("Singleton obtained, registering ontology...");
-		VitalSigns.get().registerOntology(new VitalOntology());
+//		o("Singleton obtained, registering vital domain ontology...");
+		File domainJarsDir = new File(vitalHome, "domain-jar");
+		o("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
+		//vs.registerOntology(new VitalOntology());
+		
+		if(domainJarsDir.isDirectory()) {
+			
+			o("Domain files count: " +domainJarsDir.listFiles().length);
+			for(File f : domainJarsDir.listFiles()) {
+				
+				if(!f.getName().endsWith(".jar")) {
+					continue;
+				}
+				
+				o("Registering domain ontology: " + f.getName());
+				try {
+					vs.registerOntology(f.toURI().toURL());
+				} catch (MalformedURLException e) {}
+				
+			}
+		} else {
+			o("ERROR - $VITAL_HOME/domain-jar/ directory does not exist");
+		}
 		
 	}
 
@@ -171,8 +194,53 @@ public class Application {
 		ResultList rs = new ResultList();
 		List<ResultElement> li = new ArrayList<ResultElement>();
 		rs.setResults(li);
+		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
 		try {
-			GraphObject graphObjectExpanded = Factory.getVitalService().getExpandedInSegments(VitalURI.withString(uri_str), Arrays.asList(getWordnetSegment()) );
+			serviceSegments = getServiceSegments();
+		} catch (Exception e1) {
+		}
+		
+		
+		for(Entry<String, LuceneSegment> en : VitalSigns.get().getNs2Segment().entrySet()) {
+			
+			String domainSegment = en.getKey();
+			
+			LuceneSegment value = en.getValue();
+			
+			//select all edges
+			VitalSelectQuery sq = new VitalSelectQuery();
+			sq.setLimit(1000);
+			sq.setOffset(0);
+			sq.setType(VitalQueryContainer.Type.or);
+			
+			sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeSource.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
+			sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeDestination.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
+			
+			ResultList rl = VitalSigns.get().doSelectQuery(domainSegment, sq);
+			for(ResultElement r : rl.getResults()) {
+				GraphObject _e= r.getGraphObject();
+				if(!(_e instanceof VITAL_Edge)) continue;
+				VITAL_Edge e = (VITAL_Edge) _e;
+				GraphObject otherEndpoint = null;
+				if(!e.getSourceURI().equals(uri_str)) {
+					otherEndpoint = value.get(e.getSourceURI());
+				} 
+				if(!e.getDestinationURI().equals(uri_str)) {
+					otherEndpoint = value.get(e.getDestinationURI());
+				}
+				
+				if(otherEndpoint != null) {
+					li.add(new ResultElement(e, 1d));
+					li.add(new ResultElement(otherEndpoint, 1d));
+				}
+			}
+			
+		}
+		
+		if(serviceSegments.size() > 0){
+		
+		try {
+			GraphObject graphObjectExpanded = Factory.getVitalService().getExpandedInSegments(VitalURI.withString(uri_str), serviceSegments );
 //			o("Expanded: " + graphObjectExpanded);
 			if(graphObjectExpanded instanceof VITAL_Node) {
 				VITAL_Node n = (VITAL_Node) graphObjectExpanded;
@@ -209,6 +277,7 @@ public class Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		}
 		
 		return rs;
 	}
@@ -217,6 +286,10 @@ public class Application {
 		VitalSegment s1 = new VitalSegment();
 		s1.setId("wordnet");
 		return s1;
+	}
+
+	public List<VitalSegment> getServiceSegments() throws VitalServiceException, VitalServiceUnimplementedException {
+		return Factory.getVitalService().listSegments();
 	}
 
 	/*

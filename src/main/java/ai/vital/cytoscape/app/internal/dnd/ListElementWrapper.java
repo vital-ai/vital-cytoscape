@@ -42,10 +42,14 @@ public class ListElementWrapper {
 	public String toString() {
 		if(specialLabel != null) {
 			return specialLabel;
-		} else if(entity instanceof SynsetNode) {
-			return (String) entity.getProperty("name");
+//		} else if(entity instanceof SynsetNode) {
+//			return (String) entity.getProperty("name");
 		} else {
-			return "<TODO>";
+			String s = (String) entity.getProperty("name");
+			if(s == null || s.isEmpty()) {
+				s = "(no label)";
+			}
+			return s;
 		}
 	}
 	

@@ -24,10 +24,12 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -37,6 +39,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -57,6 +60,8 @@ import ai.vital.cytoscape.app.internal.dnd.ListTransferHandler;
 import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
+import ai.vital.vitalservice.exception.VitalServiceException;
+import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.query.VitalPropertyConstraint;
 import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
 import ai.vital.vitalservice.query.VitalQueryContainer;
@@ -358,10 +363,8 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				sq.setOffset(0);
 				sq.setProjectionOnly(false);
 				List<VitalSegment> segments = new ArrayList<VitalSegment>();
-				segments.add(Application.get().getWordnetSegment());
-				
-				sq.setSegments(segments);
 				sq.setType(Type.or);
+
 				
 				String searchString = textField.getText();
 				
@@ -375,49 +378,52 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				//main containers
 				List<VitalQueryContainer> keywordsContainers = new ArrayList<VitalQueryContainer>();
 				
-				for(Class cls : types) {
+//				for(Class cls : types) {
 					
-					VitalQueryContainer qc = new VitalQueryContainer();
-					qc.setType(Type.and);
+//					VitalQueryContainer qc = new VitalQueryContainer();
+//					qc.setType(Type.and);
 					
-					String rdfType = //VitalSigns.get().getRDFClass(cls);
-							VitalOntology.NS + cls.getSimpleName();
+//					String rdfType = //VitalSigns.get().getRDFClass(cls);
+//							VitalOntology.NS + cls.getSimpleName();
 					
-					System.out.println(cls.getSimpleName() + " -> " + rdfType);
+//					System.out.println(cls.getSimpleName() + " -> " + rdfType);
 					
-					qc.getComponents().add(new VitalTypeConstraint(cls));
+//					qc.getComponents().add(new VitalTypeConstraint(cls));
 					
 					VitalQueryContainer keywords = new VitalQueryContainer();
 //					orRadioButton.isSelected() ? Type.or : Type.and
 					keywords.setType(orRadioButton.isSelected() ? Type.or : Type.and);
 					
-					qc.getComponents().add(keywords);
+//					qc.getComponents().add(keywords);
 					
 					keywordsContainers.add(keywords);
 					
-					sq.getComponents().add(qc);
+//					sq.getComponents().add(qc);
 					
-				}
+					sq.getComponents().add(keywords);
+					
+//				}
 				
 				if(searchString.length() > 0) {
 					
 					//extra scores for exact match
-					for(Class cls : types) {
+//					for(Class cls : types) {
 						
-						VitalQueryContainer qc = new VitalQueryContainer();
-						qc.setType(Type.and);
+//						VitalQueryContainer qc = new VitalQueryContainer();
+//						qc.setType(Type.and);
 						
-						String rdfType = VitalOntology.NS + cls.getSimpleName();
+//						String rdfType = VitalOntology.NS + cls.getSimpleName();
 						
-						qc.getComponents().add(new VitalTypeConstraint(cls));
+//						qc.getComponents().add(new VitalTypeConstraint(cls));
 						
 						String q = searchString.toLowerCase().replaceAll("\\s+", " ").trim();
 						
-						qc.getComponents().add(new VitalPropertyConstraint(VitalOntology.NS + "hasName", q, Comparator.EQ_CASE_INSENSITIVE, false));
 						
-						sq.getComponents().add(qc);
+//						sq.getComponents().add(qc);
 						
-					}
+						sq.getComponents().add(new VitalPropertyConstraint(VitalOntology.NS + "hasName", q, Comparator.EQ_CASE_INSENSITIVE, false));
+						
+//					}
 					
 				}
 
@@ -437,6 +443,34 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					
 				}
 
+				
+				
+				try {
+					segments = Application.get().getServiceSegments();
+				} catch (Exception e2) {
+					JOptionPane.showConfirmDialog(null, "Couldn't list service segments - falling back to wordnet...");
+					segments.add(Application.get().getWordnetSegment());
+				}
+				
+				Set<String> uris = new HashSet<String>();
+				
+				for(String ns : VitalSigns.get().getNs2Segment().keySet()) {
+					
+					ResultList rs = VitalSigns.get().doSelectQuery(ns, sq);
+					
+					for(ResultElement r : rs.getResults()) {
+						GraphObject g = r.getGraphObject();
+						if(g instanceof VITAL_Node && uris.add(g.getURI())) {
+							lastResults.add((VITAL_Node) g);
+						}
+					}
+					
+				}
+				
+				
+				sq.setSegments(segments);
+				
+				
 				ResultList rs = null;
 				try {
 					rs = Application.get().search(sq);
@@ -462,8 +496,9 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					if(r.getGraphObject() instanceof VITAL_Node) {
 						
 						VITAL_Node n = (VITAL_Node) r.getGraphObject();
-						
-						lastResults.add(n);
+						if(uris.add(n.getURI())) {
+							lastResults.add(n);
+						}
 						
 					}
 					

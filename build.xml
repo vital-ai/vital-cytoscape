@@ -13,7 +13,7 @@
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.7-SNAPSHOT.jar" />
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.8-SNAPSHOT.jar" />
 	
 	<target name="install-mvn-dependencies">
 		

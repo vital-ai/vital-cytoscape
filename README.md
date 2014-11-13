@@ -11,11 +11,11 @@ Requirements:
 
 1. Install vital software in local maven repository:
 
-ant install-mvn-dependencies
+    *ant install-mvn-dependencies*
 
 
 2. Build and package 
 
-ant main
+    *ant main*
 
 

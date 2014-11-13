@@ -3,7 +3,7 @@ vital-cytoscape
 
 vital endpoint plugin for cytoscape
 
-Requiremenets:
+Requirements:
 - maven
 - ant
 - Vital AI software with $VITAL_HOME environment variable set
@@ -11,11 +11,11 @@ Requiremenets:
 
 1. Install vital software in local maven repository:
 
-# ant install-mvn-dependencies
+ant install-mvn-dependencies
 
 
 2. Build and package 
 
-# ant main
+ant main
 
 

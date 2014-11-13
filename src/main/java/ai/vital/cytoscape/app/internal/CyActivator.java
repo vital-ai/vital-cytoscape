@@ -45,7 +45,7 @@ public class CyActivator extends AbstractCyActivator {
 		
 		CyNetworkViewManager nvManager = getService(context, CyNetworkViewManager.class);
 		
-		MenuAction action = new MenuAction(cyApplicationManager, "Hello World App");
+		MenuAction action = new MenuAction(cyApplicationManager, "Vital AI Graph Visualization");
 		
 		Properties properties = new Properties();
 		

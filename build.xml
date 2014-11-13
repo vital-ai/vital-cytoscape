@@ -13,7 +13,7 @@
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.8-SNAPSHOT.jar" />
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.11-SNAPSHOT.jar" />
 	
 	<target name="install-mvn-dependencies">
 		
@@ -47,16 +47,6 @@
 			<arg value="-DgeneratePom=true" />
 		</exec>
 	
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=ai.vital" />
-			<arg value="-DartifactId=VitalCommon" />
-			<arg value="-Dversion=0.1.0" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalcommon/vital-common-0.1.0.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
-
 		<exec command="${maven.command}">
 			<arg value="install:install-file" />
 			<arg value="-DgroupId=ai.vital" />
@@ -100,7 +90,9 @@
 				<include name="vitalsigns/lib/trove-*.jar" />
 				<include name="vitalsigns/lib/xercesImpl-*.jar" />
 				<include name="vital-domain/VitalDomain-groovy-*.jar" />
+				<!-- <include name="vital-dynamodb/**/*.jar" /> -->
 				<include name="vital-lucene/vital-lucene-*.jar" />
+				<include name="vital-triplestore/**/*.jar" />
 				<include name="vitalservice/VitalService-*.jar" />
 				
 			</zipgroupfileset>

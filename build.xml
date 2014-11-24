@@ -13,7 +13,7 @@
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.11-SNAPSHOT.jar" />
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.12-SNAPSHOT.jar" />
 	
 	<target name="install-mvn-dependencies">
 		
@@ -87,6 +87,7 @@
 				<include name="vitalsigns/lib/icu4j-*.jar" />
 				<include name="vitalsigns/lib/log4j-*.jar" />
 				<include name="vitalsigns/lib/lucene-*.jar" />
+				<include name="vitalsigns/lib/slf4j-*.jar" />
 				<include name="vitalsigns/lib/trove-*.jar" />
 				<include name="vitalsigns/lib/xercesImpl-*.jar" />
 				<include name="vital-domain/VitalDomain-groovy-*.jar" />

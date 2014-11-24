@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -23,13 +24,14 @@ import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
+import ai.vital.endpoint.EndpointType;
 
 
-public class LoginPanel extends JPanel  implements LoginListener {
+public class ServicePanel extends JPanel implements LoginListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private final static Logger log = LoggerFactory.getLogger(LoginPanel.class);
+	private final static Logger log = LoggerFactory.getLogger(ServicePanel.class);
 	
 	private JLabel login = new JLabel("login:");
 	private JLabel passwd = new JLabel("passwd:");
@@ -45,77 +47,99 @@ public class LoginPanel extends JPanel  implements LoginListener {
 	private Timer t = new Timer();
 	
 	
-	JPanel loginPanelRow;
+	private JPanel URLPanel;
+	
+	JPanel connectPanelRow;
 	JPanel passwordPanelRow;
 	JPanel loginButtonPanelRow;
 	
 	JPanel noticeLabelPanel;
 	
-	JPanel logoutButtonPanelRow;
+	JPanel disconnectButtonPanelRow;
 	
 	
-	private JButton loginButton = new JButton("login");
-	private JButton logoutButton = new JButton("logout");
+	private JButton connectButton = new JButton("Connect");
+	private JButton disconnectButton = new JButton("Disconnect");
 	
-	private JTextField URLField = new JTextField();
+//	private JTextField URLField = new JTextField();
+	private JLabel endpointLabel = new JLabel("endpoint:");
+	private JLabel endpointTypeL = new JLabel();
 	
 //	private JPanel notLoggedInPanel = new JPanel();
 //	private JPanel loggedInPanel = new JPanel();
 	
-	public LoginPanel() {
+	
+	private JLabel URLLabel = new JLabel("URL:");
+	private JTextField URLField = new JTextField();
+	
+	private EndpointType endpointType; 
+	
+	public ServicePanel() {
 		super();
 				
 		this.setLayout(new BoxLayout(this,BoxLayout.Y_AXIS));
+		this.setBorder(new TitledBorder("Service"));
 
-		JPanel URLPanel = new JPanel();
-		URLPanel.setLayout(new BorderLayout(5,2));
-		URLPanel.setBorder(new EmptyBorder(2,2,2,2));
-		
-		JLabel comp = new JLabel("URL:");
-		comp.setHorizontalAlignment(SwingConstants.RIGHT);
-		
-		Dimension labelSize = new Dimension(40,25);
-		
-		comp.setPreferredSize(labelSize);
-		
-		URLPanel.add(comp, BorderLayout.WEST);
-		
-		URLField.setEditable(true);
-		URLField.setText(Application.get().getPrimeURL());
-		
-		URLPanel.add(URLField, BorderLayout.CENTER);
-		
-		add(URLPanel);
-		
-		this.setBorder(new TitledBorder("Login panel"));
-		
-//		notLoggedInPanel.setLayout(new GridLayout(3,2));
-//		
-//		notLoggedInPanel.add(login);
-//		notLoggedInPanel.add(loginBox);
-//		notLoggedInPanel.add(passwd);
-//		notLoggedInPanel.add(passwdBox);
-//		notLoggedInPanel.add(message);
-//		notLoggedInPanel.add(loginButton);
-//		
-//		loggedInPanel.setLayout(new GridLayout(2,1));
-//		loggedInPanel.add(loggedInInfo);
-//		loggedInPanel.add(logoutButton);
-		
-//		notLoggedInPanel.setLayout(new GridLayout(3,2));
 		
 		
-		loginPanelRow = new JPanel();
-//		loginPanelRow.setLayout(new BoxLayout(loginPanelRow, BoxLayout.X_AXIS));
-		loginPanelRow.setLayout(new BorderLayout(5,2));
-		loginPanelRow.setBorder(new EmptyBorder(2,2,2,2));
+		JPanel endpointTypePanel = new JPanel();
+		endpointTypePanel.setLayout(new BorderLayout(5,2));
+		endpointTypePanel.setBorder(new EmptyBorder(2,2,2,2));
+		
+		
+		endpointLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		
+		Dimension labelSize = new Dimension(60,25);
+		
+		endpointLabel.setPreferredSize(labelSize);
+		
+		endpointTypePanel.add(endpointLabel, BorderLayout.WEST);
+		
+		endpointType = Application.get().getEndpointType();
+		
+		log.info("Endpoint type: {}", endpointType);
+
+		
+		endpointTypeL.setText("" + endpointType.getName());
+		endpointTypePanel.add(endpointTypeL, BorderLayout.CENTER);
+		
+		add(endpointTypePanel);
+
+
+		if(endpointType == EndpointType.VITALPRIME) {
+			
+			
+			URLPanel = new JPanel();
+			URLPanel.setLayout(new BorderLayout(5,2));
+			URLPanel.setBorder(new EmptyBorder(2,2,2,2));
+			
+			URLLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+			URLLabel.setPreferredSize(labelSize);
+			
+			URLPanel.add(URLLabel, BorderLayout.WEST);
+			
+			URLField.setEditable(true);
+			URLField.setText(Application.get().getPrimeURL());
+			
+			URLPanel.add(URLField, BorderLayout.CENTER);
+			
+			add(URLPanel);
+			
+		}
+		
+
+		
+		
+		connectPanelRow = new JPanel();
+		connectPanelRow.setLayout(new BorderLayout(5,2));
+		connectPanelRow.setBorder(new EmptyBorder(2,2,2,2));
 		
 
 		login.setPreferredSize(labelSize);
 		login.setHorizontalAlignment(SwingConstants.RIGHT);
 		
-		loginPanelRow.add(login, BorderLayout.WEST);
-		loginPanelRow.add(loginBox, BorderLayout.CENTER);
+		connectPanelRow.add(login, BorderLayout.WEST);
+		connectPanelRow.add(loginBox, BorderLayout.CENTER);
 		
 		
 		passwordPanelRow = new JPanel();
@@ -133,9 +157,9 @@ public class LoginPanel extends JPanel  implements LoginListener {
 		loginButtonPanelRow.setBorder(new EmptyBorder(2,2,2,2));
 //		loginButtonPanelRow.setAlignmentX(RIGHT_ALIGNMENT);
 		loginButtonPanelRow.add(message, BorderLayout.CENTER);
-		loginButtonPanelRow.add(loginButton, BorderLayout.EAST);
+		loginButtonPanelRow.add(connectButton, BorderLayout.EAST);
 		
-		loginButton.setPreferredSize(new Dimension(70,25));
+		connectButton.setPreferredSize(new Dimension(70,25));
 		
 //		
 //		notLoggedInPanel.add(message);
@@ -146,14 +170,18 @@ public class LoginPanel extends JPanel  implements LoginListener {
 //		loggedInPanel.add(logoutButton);
 		
 		
-		loginButton.addActionListener(new ActionListener(){
+		connectButton.addActionListener(new ActionListener(){
 
 			public void actionPerformed(ActionEvent e) {
 				
-				loginButton.setEnabled(false);
+				connectButton.setEnabled(false);
 				message.setText("logging in ...");
 				final String url = URLField.getText();
-				log.info("Connecting to Vital Endpoint at: " + url);
+				if(endpointType == EndpointType.VITALPRIME) {
+					log.info("Connecting to Vital Endpoint at: " + url);
+				} else {
+					log.info("Connecting to Vital Endpoint type: " + endpointType.getName());
+				}
 				
 				TimerTask task = new TimerTask(){
 
@@ -164,27 +192,30 @@ public class LoginPanel extends JPanel  implements LoginListener {
 							Application.get().login(loginBox.getText(), String.valueOf(passwdBox.getPassword()),url);
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
-							e.printStackTrace();
-							message.setText(e.getLocalizedMessage());
+							log.error(e.getLocalizedMessage());
+							message.setText("");
+							JOptionPane.showMessageDialog(null, "Connection error: " + e.getLocalizedMessage(), "Connection error", JOptionPane.ERROR_MESSAGE);
+							connectButton.setEnabled(true);
+							
 						}
 						
-						loginButton.setEnabled(true);
+						
 					}};
 
 				t.schedule(task, 10);
 				
 			}});
 		
-		logoutButton.addActionListener(new ActionListener(){
+		disconnectButton.addActionListener(new ActionListener(){
 
 			public void actionPerformed(ActionEvent e) {
 				Application.get().logout();
 			}});
 		
-		logoutButtonPanelRow = new JPanel();
-		logoutButtonPanelRow.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		logoutButtonPanelRow.add(loggedInInfo);
-		logoutButtonPanelRow.add(logoutButton);
+		disconnectButtonPanelRow = new JPanel();
+		disconnectButtonPanelRow.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		disconnectButtonPanelRow.add(loggedInInfo);
+		disconnectButtonPanelRow.add(disconnectButton);
 		
 		/*
 		if(Configurator.getNoticeLabelVisible()) {
@@ -197,61 +228,51 @@ public class LoginPanel extends JPanel  implements LoginListener {
 		}
 		
 		*/
-		
-		add(loginPanelRow);
-		add(passwordPanelRow);
-		add(loginButtonPanelRow);
-		
-		if(noticeLabelPanel != null) {
-			add(noticeLabelPanel);
-		}
+
+		onLogout();
+		message.setText("");
 		
 		Application.get().addLoginListener(this);
+		
+		
+		if(endpointType != EndpointType.VITALPRIME) {
+			
+			//autologin
+			connectButton.doClick();
+			
+		}
+		
 		
 	}
 
 	public void onLogin() {
-//		remove(notLoggedInPanel);
-//		add(loggedInPanel);
 		
 		if(noticeLabelPanel != null) {
 			remove(noticeLabelPanel);
 		}
 		remove(loginButtonPanelRow);
-		remove(passwordPanelRow);
-		remove(loginPanelRow);
+//		remove(passwordPanelRow);
+//		remove(connectPanelRow);
 		
-//		add(loggedInInfo);
-		add(logoutButtonPanelRow);
-		//loggedInInfo.setText("<html>You're logged in as <b>" + Application.get().getLogin() + "</b></html>");
+		add(disconnectButtonPanelRow);
+		
 		URLField.setEnabled(false);
 		
-		/* XXX DEBUG section
-		String s = "DEBUG - " + VitalSigns.get().getNs2Package().keySet().toString();
-		VitalSelectQuery selectQuery = new VitalSelectQuery();
-		
-		selectQuery.getComponents().add(new VitalTypeConstraint("http://vital.ai/ontology/TestOntology.owl#TestDocument"));
-		ResultList rl = VitalSigns.get().doSelectQuery("http://vital.ai/ontology/TestOntology.owl", selectQuery);
-		
-		s+= ("size: " + rl.getResults().size() + " ");		
-		for(ResultElement el : rl.getResults()) {
-			s += (el.getGraphObject().toString());
-		}
-		
-		JOptionPane.showMessageDialog(null, s);
-		*/
 	}
 
 	public void onLogout() {
+		
+		connectButton.setEnabled(true);
+		
 		URLField.setEnabled(true);
 //		remove(loggedInPanel);
 //		add(notLoggedInPanel);
 		
-		remove(logoutButtonPanelRow);
+		remove(disconnectButtonPanelRow);
 //		remove(loggedInInfo);
 
-		add(loginPanelRow);
-		add(passwordPanelRow);
+//		add(connectPanelRow);
+//		add(passwordPanelRow);
 		add(loginButtonPanelRow);
 		if(noticeLabelPanel != null) {
 			add(noticeLabelPanel);

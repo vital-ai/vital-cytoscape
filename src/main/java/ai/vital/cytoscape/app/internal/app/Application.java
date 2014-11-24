@@ -6,12 +6,30 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
+import ai.vital.domain.Datascript;
+import ai.vital.domain.Job;
+import ai.vital.domain.SuperAdminDatascript;
+import ai.vital.domain.SuperAdminJob;
+import ai.vital.endpoint.EndpointType;
 import ai.vital.lucene.model.LuceneSegment;
+import ai.vital.prime.service.VitalServicePrime;
+import ai.vital.prime.service.config.VitalServicePrimeConfig;
+import ai.vital.vitalservice.VitalService;
+import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.Factory;
+import ai.vital.vitalservice.model.App;
+import ai.vital.vitalservice.model.Customer;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalPropertyConstraint;
@@ -33,6 +51,17 @@ public class Application {
 	private static Application singleton;
 	
 	private List<LoginListener> loginListeners = new ArrayList<LoginListener>();
+
+	private final static Logger log = LoggerFactory.getLogger(Application.class);
+
+	//managed by connection tab
+	private VitalService vitalService = null;
+
+	private Config serviceConfig = null;
+	
+	private EndpointType endpointType = null;
+	
+	private String primeURL = null;
 	
 	public boolean addLoginListener(LoginListener l) {
 		if(!loginListeners.contains(l)) {
@@ -64,40 +93,121 @@ public class Application {
 		singleton = new Application();
 		
 		String vitalHome = System.getenv("VITAL_HOME");
-		o("$VITAL_HOME: " + vitalHome);
-		o("Checking vital singleton...");
+		log.info("Checking vital singleton...");
 		VitalSigns vs = VitalSigns.get();
+		log.info("$VITAL_HOME: " + vitalHome);
 //		o("Singleton obtained, registering vital domain ontology...");
 		File domainJarsDir = new File(vitalHome, "domain-jar");
-		o("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
+		log.info("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
 		//vs.registerOntology(new VitalOntology());
 		
 		if(domainJarsDir.isDirectory()) {
 			
-			o("Domain files count: " +domainJarsDir.listFiles().length);
+			log.info("Domain files count: " +domainJarsDir.listFiles().length);
 			for(File f : domainJarsDir.listFiles()) {
 				
 				if(!f.getName().endsWith(".jar")) {
 					continue;
 				}
 				
-				o("Registering domain ontology: " + f.getName());
+				log.info("Registering domain ontology: " + f.getName());
 				try {
 					vs.registerOntology(f.toURI().toURL());
 				} catch (MalformedURLException e) {}
 				
 			}
 		} else {
-			o("ERROR - $VITAL_HOME/domain-jar/ directory does not exist");
+			log.warn("WARN - $VITAL_HOME/domain-jar/ directory does not exist");
+		}
+	
+		
+		File serviceCfgFile = new File(vitalHome, "vital-config/vitalservice/vitalservice.config");
+		
+		if(!serviceCfgFile.exists()) {
+			log.error("Service config file not found: " + serviceCfgFile.getAbsolutePath());
+			singleton.serviceConfig = ConfigFactory.empty();
+		} else {
+			singleton.serviceConfig = ConfigFactory.parseFile(serviceCfgFile);
+		}
+
+		singleton.endpointType = EndpointType.LUCENEMEMORY;
+		
+		try {
+			singleton.endpointType = EndpointType.fromString(singleton.serviceConfig.getString("type"));
+		} catch(Exception e) {
+			log.error(e.getLocalizedMessage(), e);
+		}
+		
+		if(singleton.endpointType == EndpointType.VITALPRIME) {
+			
+			String primeURL = "http://127.0.0.1:9080/java";
+			
+			//set initial url
+			try {
+				primeURL = singleton.serviceConfig.getString("VitalPrime.endpointURL");
+			} catch(Exception e) {
+				log.error(e.getLocalizedMessage(), e);
+			}
+			
+			singleton.primeURL = primeURL;
+			
+
+			
+		} else {
+			
+			//just create the service
+//			service = Factory.getVitalService();
+			
 		}
 		
 	}
 
 	public void login(String username, String password, String url) throws Exception {
 
-		o("Logging in...");
+		log.debug("Logging in...");
 		
-		new URL(url);
+		
+		if(endpointType == EndpointType.VITALPRIME) {
+			
+			String customerID = serviceConfig.getString("customerID");
+			String appID = serviceConfig.getString("appID");
+			
+			App app = new App();
+			app.setID(appID);
+			app.setCustomerID(customerID);
+			
+			Customer customer = new Customer();
+			customer.setID(customerID);
+			
+			new URL(url);
+			
+//			VitalServicePrimeConfigCreator creator = new VitalServicePrimeConfigCreator();
+			VitalServicePrimeConfig cfg = new VitalServicePrimeConfig();
+			
+			cfg.setApp(app);
+			cfg.setCustomer(customer);
+			cfg.endpointURL = url;
+			
+			VitalService _service = Factory.createVitalService(cfg);
+			
+			VitalStatus status = _service.ping();
+			
+			if(status.getStatus() != VitalStatus.Status.ok) {
+				throw new Exception("Ping failed: " + status.getMessage());
+			}
+			
+			vitalService = _service;
+			
+//			creator.setCustomConfigProperties(cfg, serviceConfig);
+			
+			
+		} else {
+			
+			//just create the service with factory
+			
+			vitalService = Factory.getVitalService();
+			
+		}
 		
 		/*
 		VitalService.setEndpoint(url);
@@ -113,25 +223,17 @@ public class Application {
 		*/
 		//successfully authenticated?
 		
-		Factory.getVitalService();
-		
-		o("Endpoint changed to: " + url);
-		
 		/*
 		o("Testing expansion...");
 		
 		ResultList expanded = getConnections("http://uri.vital.ai/wordnet/NounSynsetNode_1396611318625_1016512");
 		
 		for(ResultElement el : expanded.getResults()) {
-			System.out.println(el.getGraphObject());
+			log.debug(el.getGraphObject());
 		}
 		*/
 		
 		notifyListenersOfLoginEvent();
-		
-		
-		
-		
 		
 	}
 
@@ -157,21 +259,15 @@ public class Application {
 		
 	}
 	
-	static void o(String m){System.out.println(m);}
-
 	public void logout() {
 
+		this.vitalService = null;
 		notifyListenersOfLogoutEvent();
 		
 	}
 
-	public String getInitialURL() {
-		return "http://127.0.0.1:9080";
-//		return "http://dataserver.moderni.st:80";
-	}
-
 	public ResultList search(VitalSelectQuery sq) throws Exception {
-		return Factory.getVitalService().selectQuery(sq);
+		return vitalService.selectQuery(sq);
 	}
 
 	public boolean isExpandUsingSynonyms() {
@@ -240,7 +336,7 @@ public class Application {
 		if(serviceSegments.size() > 0){
 		
 		try {
-			GraphObject graphObjectExpanded = Factory.getVitalService().getExpandedInSegments(VitalURI.withString(uri_str), serviceSegments );
+			GraphObject graphObjectExpanded = vitalService.getExpandedInSegments(VitalURI.withString(uri_str), serviceSegments );
 //			o("Expanded: " + graphObjectExpanded);
 			if(graphObjectExpanded instanceof VITAL_Node) {
 				VITAL_Node n = (VITAL_Node) graphObjectExpanded;
@@ -275,7 +371,7 @@ public class Application {
 			}
 //			o("Results: " + li.size());
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getLocalizedMessage(), e);
 		}
 		}
 		
@@ -289,8 +385,108 @@ public class Application {
 	}
 
 	public List<VitalSegment> getServiceSegments() throws VitalServiceException, VitalServiceUnimplementedException {
-		return Factory.getVitalService().listSegments();
+		return vitalService.listSegments();
 	}
+
+	public VitalService getVitalService() {
+		return vitalService;
+	}
+
+	public void setVitalService(VitalService vitalService) {
+		this.vitalService = vitalService;
+	}
+
+	public EndpointType getEndpointType() {
+		return endpointType;
+	}
+
+	public String getPrimeURL() {
+		return primeURL;
+	}
+
+	public List<Datascript> getDatascripts() throws Exception {
+		if(endpointType == EndpointType.VITALPRIME) {
+			VitalServicePrime primeService = (VitalServicePrime) vitalService;
+			List<GraphObject> scripts = new ArrayList<GraphObject>();
+			List<GraphObject> commonScripts = primeService.listDatascripts("commons/scripts/*", false);
+			scripts.addAll(commonScripts);
+			List<GraphObject> appScripts = primeService.listDatascripts("*", false);
+			scripts.addAll(appScripts);
+			
+			List<Datascript> scriptsRes = new ArrayList<Datascript>();
+			//skip non-callable jobs
+			for( Iterator<GraphObject> iterator = scripts.iterator(); iterator.hasNext(); ) {
+				
+				GraphObject g = iterator.next();
+				if(g instanceof SuperAdminDatascript) {
+					iterator.remove();
+					continue;
+				}
+				if(g instanceof Job || g instanceof SuperAdminJob) {
+					Boolean callable = (Boolean) g.getProperty("callable");
+					if(callable == null || callable.equals(Boolean.FALSE)) {
+						iterator.remove();
+					}
+				}
+				
+				if(g instanceof Datascript) {
+					scriptsRes.add((Datascript) g);
+				}
+				
+			}
+			
+			return scriptsRes;
+		} else {
+			throw new Exception("Expected vitalprime endpoint type");
+		}
+	}
+
+	public static void initForTests() {
+
+		singleton = new Application();
+		singleton.vitalService = Factory.getVitalService();
+		
+		String vitalHome = System.getenv("VITAL_HOME");
+		log.info("$VITAL_HOME: " + vitalHome);
+	
+		File serviceCfgFile = new File(vitalHome, "vital-config/vitalservice/vitalservice.config");
+		
+		if(!serviceCfgFile.exists()) {
+			log.error("Service config file not found: " + serviceCfgFile.getAbsolutePath());
+			singleton.serviceConfig = ConfigFactory.empty();
+		} else {
+			singleton.serviceConfig = ConfigFactory.parseFile(serviceCfgFile);
+		}
+		
+		singleton.endpointType = singleton.vitalService.getEndpointType();
+		
+		if(singleton.vitalService instanceof VitalServicePrime) {
+			
+			String primeURL = "http://127.0.0.1:9080/java";
+			
+			//set initial url
+			try {
+				primeURL = singleton.serviceConfig.getString("VitalPrime.endpointURL");
+			} catch(Exception e) {
+				log.error(e.getLocalizedMessage(), e);
+			}
+			
+			singleton.primeURL = primeURL;
+			
+		}
+		
+
+		
+	}
+
+	public ResultList executeDatascript(String path,
+			Map<String, Object> runParamsF) throws Exception {
+
+		return vitalService.callFunction(path, runParamsF);
+		
+	}
+
+	
 
 	/*
 	public DiscreteMapping getCustomNodeColorMapping(CyNetwork network) {
@@ -315,5 +511,5 @@ public class Application {
 		
 	}
 	*/
-	
+
 }

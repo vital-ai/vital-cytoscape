@@ -2,10 +2,11 @@ package ai.vital.cytoscape.app.internal.tabs;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.swing.JPanel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
@@ -15,15 +16,18 @@ public class ConnectionTab extends JPanel implements LoginListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private LoginPanel loginPanel = new LoginPanel();
+//	private LoginPanel loginPanel = new LoginPanel();
+	private ServicePanel servicePanel = new ServicePanel();
 	
 	private JPanel centerPanel = new JPanel();
+	
+	private final static Logger log = LoggerFactory.getLogger(ConnectionTab.class);
 	
 	public ConnectionTab() {
 		super();
 		setLayout(new BorderLayout());
 		
-		add(loginPanel,BorderLayout.NORTH);
+		add(servicePanel,BorderLayout.NORTH);
 		
 		centerPanel.setLayout(new GridLayout(3,1,2,2));
 		
@@ -33,7 +37,7 @@ public class ConnectionTab extends JPanel implements LoginListener {
 
 	public void onLogin() {
 		
-		System.out.println("On login received!");
+		log.debug("On login received!");
 	
 		updateUI();
 		
@@ -41,7 +45,7 @@ public class ConnectionTab extends JPanel implements LoginListener {
 
 	public void onLogout() {
 	
-		System.out.println("On logout received!");
+		log.debug("On logout received!");
 		
 		NetworkListPanel.clearListeners();
 		
@@ -51,7 +55,7 @@ public class ConnectionTab extends JPanel implements LoginListener {
 	
 	
 	public void setURL(String initialURL) {
-		loginPanel.setConnectionURL(initialURL);
+		servicePanel.setConnectionURL(initialURL);
 	}
 
 }

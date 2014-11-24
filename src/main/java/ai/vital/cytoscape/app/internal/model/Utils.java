@@ -31,11 +31,14 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyEdge.Type;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
@@ -48,6 +51,8 @@ import ai.vital.vitalsigns.model.VITAL_Node;
 
 public class Utils {
 
+	private final static Logger log = LoggerFactory.getLogger(Utils.class);
+	
 	private static final String CELLULAR_COMPONENT = "cellular_component";
 	private static final String BIOLOGICAL_PROCESS = "biological_process";
 	private static final String MOLECULAR_FUNCTION = "molecular_function";
@@ -178,7 +183,7 @@ public class Utils {
 			String uri = entity.getURI();
 			
 			
-			if(uriExistsInTheNetwork(cyNetwork, uri)) continue;
+			if(nodeURIExistsInTheNetwork(cyNetwork, uri)) continue;
 
 			CyNode createdNode = (CyNode) createNodeForURI(cyNetwork, uri);
 			
@@ -197,31 +202,175 @@ public class Utils {
 			
 			Set<View<CyNode>> nodeViews = new HashSet<View<CyNode>>();
 			
-			for(CyNode n : placedNodes){
+			if(networkView != null) {
 				
-				View<CyNode> nodeView = networkView.getNodeView(n);
-				
-				if(nodeView != null) {
-					nodeViews.add(nodeView);
+				for(CyNode n : placedNodes){
+					
+					View<CyNode> nodeView = networkView.getNodeView(n);
+					
+					if(nodeView != null) {
+						nodeViews.add(nodeView);
+					}
+					
+					
 				}
 				
+				log.debug("Node views: " + nodeViews.size());
+				
+				TaskIterator createTaskIterator = getGridLayout().createTaskIterator(networkView, getGridLayout().getDefaultLayoutContext(), nodeViews, "");
+				
+				VitalAICytoscapePlugin.getDialogTaskManager().execute(createTaskIterator);
+				
+//				networkView.fitContent();
 				
 			}
 			
-			System.out.println("Node views: " + nodeViews.size());
-			
-			TaskIterator createTaskIterator = getGridLayout().createTaskIterator(networkView, getGridLayout().getDefaultLayoutContext(), nodeViews, "");
+		}
+		
+		
+		
+//		Cytoscape.firePropertyChange(Cytoscape.NETWORK_MODIFIED, null, cyNetwork);
+		
+	
+//		
+//		CyNetworkView networkView = Cytoscape.getNetworkView(cyNetwork.getIdentifier());
+//		if(networkView!=null) {
+//			
+//			networkView.applyLayout(defaultLayout);
+//			applyVisualStyle(cyNetwork);
+//						
+//		}
+	        
+		
+        /*
+        if (networkView != null) {
+            CyLayoutAlgorithm layoutAlgorithm = graphReader.getLayoutAlgorithm();
+            if (layoutAlgorithm != null) {
+                layoutAlgorithm.doLayout(networkView);
+            }
+        }
+         */
+		
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static void placeNodesEdgesInTheNetwork(CyNetwork cyNetwork,
+			VITAL_Node[] nodes, VITAL_Edge[] edges) {
 
-//			while(createTaskIterator.hasNext()) {
-//				System.out.println("TASK: " + createTaskIterator.next().toString());
-//			}
+//		ConsolePanel.logLine("Importing "+entities.length+ " node(s) into the network '"+cyNetwork.getTitle()+"'");
+		
+		CyNetworkView networkView = VitalAICytoscapePlugin.getNetworkView(cyNetwork);
+		
+		LinkedList<CyNode> placedNodes = new LinkedList<CyNode>();
+		
+		HashSet<Long> ids = new HashSet<Long>();
+		
+		List<View<CyNode>> nodeViews = new ArrayList<View<CyNode>>();
+		List<View<CyEdge>> edgeViews = new ArrayList<View<CyEdge>>();
+		
+		for (int i = 0; i < nodes.length; i++) {
 			
-			VitalAICytoscapePlugin.getDialogTaskManager().execute(createTaskIterator);
+			GraphObject entity = (GraphObject) nodes[i];
+
+			//use uri as an identifier
+			String uri = entity.getURI();
 			
-//			networkView.fitContent();
+			
+			if(nodeURIExistsInTheNetwork(cyNetwork, uri)) continue;
+
+			CyNode createdNode = (CyNode) createNodeForURI(cyNetwork, uri);
+			
+			setNodeAttributes(cyNetwork, createdNode, (VITAL_Node) entity);
+			
+			placedNodes.add(createdNode);
+			
+			ids.add(createdNode.getSUID());
+
+			if(networkView != null) {
+				View<CyNode> nv = networkView.getNodeView(createdNode);
+				if(nv!=null) nodeViews.add(nv);
+			}
+			
+		}
+		
+		
+		
+		for(int i = 0; i < edges.length; i++) {
+			
+			VITAL_Edge edge = edges[i];
+			
+			String uri = edge.getURI();
+			
+			if(edgeURIExistsInTheNetwork(cyNetwork, uri)) continue;
+			
+			CyNode sourceNode = getCyNodeForURIInTheNetwork(cyNetwork, edge.getSourceURI());
+			
+			if(sourceNode == null) continue;
+			
+			CyNode destNode = getCyNodeForURIInTheNetwork(cyNetwork, edge.getDestinationURI());
+			
+			if(destNode == null) continue;
+			
+			CyEdge cyEdge = cyNetwork.addEdge(sourceNode, destNode, true); // directed
+
+			log.debug("Edge ID: "+ cyEdge.getSUID());
+			
+			Utils.setEdgeAttributes(cyNetwork, cyEdge, edge);
+
+			if(networkView != null) {
+				View<CyEdge> ev = networkView.getEdgeView(cyEdge);
+				if(ev!=null) edgeViews.add(ev);
+			}
+			
 			
 			
 		}
+		
+		log.info("Import node views: " + nodes.length);
+		log.info("Import edge views: " + edges.length);
+		
+		//grid layout for node views only
+		if(nodeViews.size() > 0 && edgeViews.size() == 0) {
+
+			VitalAICytoscapePlugin.getEventHelper().flushPayloadEvents();
+			
+			if(networkView != null) {
+				
+				for(CyNode n : placedNodes){
+					
+					View<CyNode> nodeView = networkView.getNodeView(n);
+					
+					if(nodeView != null) {
+						nodeViews.add(nodeView);
+					}
+					
+					
+				}
+				
+				log.debug("Node views: " + nodeViews.size());
+				
+				TaskIterator createTaskIterator = getGridLayout().createTaskIterator(networkView, getGridLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
+				
+				VitalAICytoscapePlugin.getDialogTaskManager().execute(createTaskIterator);
+				
+//				networkView.fitContent();
+				
+			}
+			
+		}
+		
+		if(nodeViews.size() > 0 && edgeViews.size() > 0) {
+			
+			VitalAICytoscapePlugin.getEventHelper().flushPayloadEvents();
+			
+			TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(networkView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
+			
+			VitalAICytoscapePlugin.getDialogTaskManager().execute(ti);
+			
+		}
+		
+		
 		
 		
 		
@@ -281,6 +430,7 @@ public class Utils {
 		return cyNode;
 		
 	}
+	
 
 //	public static void placeNodesInTheNetwork(CyNetwork cyNetwork, List<Entity> entities) {
 //		placeNodesInTheNetwork(cyNetwork, entities.toArray(new Entity[]{}));
@@ -305,9 +455,9 @@ public class Utils {
 			CyNetworkView networkView = Cytoscape.getNetworkView(network.getIdentifier());
 		
 			String currentStyleName = networkView.getVisualStyle().getName();
-			System.out.println("Current style name : " + currentStyleName);
+			log.debug("Current style name : " + currentStyleName);
 //			if(currentStyleName.equals(memomicsVisualStyleName)) {
-//				System.out.println("No need to change style.");
+//				log.debug("No need to change style.");
 //				defaultLayout.doLayout(networkView);
 //				return;
 //			}
@@ -318,7 +468,7 @@ public class Utils {
 			// check to see if a visual style with this name already exists
 			VisualStyle vs = catalog.getVisualStyle(styleName);
 			if (vs == null) {
-				System.out.println("Created visual style: " + styleName);
+				log.debug("Created visual style: " + styleName);
 				// if not, create it and add it to the catalog
 				vs = createVisualStyle(network);
 				catalog.addVisualStyle(vs);
@@ -458,7 +608,7 @@ public class Utils {
 			// Discrete Mapping - set edge color 
 			DiscreteMapping edgeColorMapping = new DiscreteMapping(defaultEdgeColor,
 					ObjectMapping.EDGE_MAPPING);
-			edgeColorMapping.setControllingAttributeName(Attributes.edgeTypeUMIS, network, false);
+			edgeColorMapping.setControllingAttributeName(Attributes.edgeTypeURI, network, false);
 			
 			//edgeColorMapping.putMapValue(ASAPI_HyperEdgeTypes.SIMPLE_RELATION_PART, directRelationColor);
 			
@@ -484,7 +634,7 @@ public class Utils {
 			// Discrete Mapping - set edge target arrow head color 
 			DiscreteMapping edgeTargetArrowHeadMapping = new DiscreteMapping(defaultEdgeColor,
 					ObjectMapping.EDGE_MAPPING);
-			edgeTargetArrowHeadMapping.setControllingAttributeName(Attributes.edgeTypeUMIS, network, false);
+			edgeTargetArrowHeadMapping.setControllingAttributeName(Attributes.edgeTypeURI, network, false);
 			
 //			edgeTargetArrowHeadMapping.putMapValue(EdgeTypeIDs.RELATION_GENE_2_GO, directRelationColor);
 //			edgeTargetArrowHeadMapping.putMapValue(EdgeTypeIDs.RELATION_BIND, directRelationColor);
@@ -513,7 +663,7 @@ public class Utils {
 	        
 	        LineStyle defaultLineStyle = LineStyle.SOLID;
 			DiscreteMapping edgeLineMapping = new DiscreteMapping(defaultLineStyle, ObjectMapping.EDGE_MAPPING);
-			edgeLineMapping.setControllingAttributeName(Attributes.edgeTypeUMIS, network, false);
+			edgeLineMapping.setControllingAttributeName(Attributes.edgeTypeURI, network, false);
 			
 //			edgeLineMapping.putMapValue(virtualSummarization_fact_EdgeTypeID, LineStyle.LONG_DASH);
 //			edgeLineMapping.putMapValue(ASAPI_HyperEdgeTypes.SIMPLE_RELATION_PART, LineStyle.LONG_DASH);
@@ -680,7 +830,7 @@ public class Utils {
 				boolean userEditable = nodeAttributes.getUserEditable(key);
 				boolean userVisible = nodeAttributes.getUserVisible(key);
 				
-				System.out.println();
+				log.debug();
 				
 //			}
 			
@@ -709,7 +859,7 @@ public class Utils {
 	private static void setProperty(CyRow attributes, PropertyInterface propertyO) {
 		
 		if(propertyO.getValue() == null) {
-			System.out.println( "Property \"" + propertyO.getShortName() + "\" value is null" );
+			log.debug( "Property \"" + propertyO.getShortName() + "\" value is null" );
 			return;
 		}
 		
@@ -739,8 +889,29 @@ public class Utils {
 	}
 	
 	
-	public static boolean uriExistsInTheNetwork(CyNetwork cyNetwork, String uri) {
+	public static boolean nodeURIExistsInTheNetwork(CyNetwork cyNetwork, String uri) {
 		return getCyNodeForURIInTheNetwork(cyNetwork, uri) != null;
+	}
+	
+	public static boolean edgeURIExistsInTheNetwork(CyNetwork cyNetwork, String uri) {
+		return getCyEdgeForURIInTheNetwork(cyNetwork, uri) != null;
+	}
+	
+	public static CyEdge getCyEdgeForURIInTheNetwork(CyNetwork cyNetwork, String edgeURI) {
+		for(CyEdge edge : cyNetwork.getEdgeList()) {
+			CyRow row = cyNetwork.getRow(edge);
+			String s = row.get(Attributes.uri, String.class);
+
+			if(s == null || s.isEmpty()) continue;
+			
+			if(edgeURI.equals(s)) {
+				return edge;
+			}
+			
+		}
+		
+		return null;
+			
 	}
 	
 	public static CyNode getCyNodeForURIInTheNetwork(CyNetwork cyNetwork, String uri) {
@@ -750,6 +921,8 @@ public class Utils {
 			CyRow row = cyNetwork.getRow(node);
 			
 			String s = row.get(Attributes.uri, String.class);
+
+			if(s == null || s.isEmpty()) continue;
 			
 			if(uri.equals(s)) {
 				return node;

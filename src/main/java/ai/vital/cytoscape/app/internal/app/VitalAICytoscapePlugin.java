@@ -2,8 +2,13 @@ package ai.vital.cytoscape.app.internal.app;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
+
+import javax.swing.JLabel;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -17,15 +22,25 @@ import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.swing.DialogTaskManager;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.CyActivator;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
 import ai.vital.cytoscape.app.internal.tabs.ConnectionTab;
+import ai.vital.cytoscape.app.internal.tabs.DatascriptsTab;
 import ai.vital.cytoscape.app.internal.tabs.MainTabsPanel;
+import ai.vital.cytoscape.app.internal.tabs.PathsTab;
 import ai.vital.cytoscape.app.internal.tabs.SearchTab;
+import ai.vital.endpoint.EndpointType;
+import ai.vital.vitalservice.exception.VitalServiceException;
+import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
+import ai.vital.vitalservice.segment.VitalSegment;
 
-public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeListener {
+public class VitalAICytoscapePlugin extends Thread implements LoginListener, PropertyChangeListener {
 
+	private final static Logger log = LoggerFactory.getLogger(VitalAICytoscapePlugin.class);
+	
 	private static VitalAICytoscapePlugin singleton;
 	
 	private MainTabsPanel tabPane;
@@ -34,11 +49,19 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 	
 	private SearchTab searchTab;
 	
+	private PathsTab pathsTab;
+	
+	private DatascriptsTab datascriptsTab;
+	
 	//XXX connect
 //	public final static NodeMenuListener nodeMenuListener = new NodeMenuListener();
 	
 	//2 - search
 	private final static int searchTabIndex = 1;
+//	
+//	private final static int pathsTabIndex = 2;
+//	
+//	private final static int datascriptsTabIndex = 3;
 	
 	private CyActivator activator;
 
@@ -58,6 +81,7 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 
 	private DialogTaskManager dialogTaskManager;
 
+	private JLabel initLabel = null;
 	public VitalAICytoscapePlugin(CyActivator activator, CyApplicationManager cyApplicationManager, CyNetworkFactory nFactory, 
 			CyNetworkViewFactory nvFactory, CyNetworkManager nManager, CyNetworkViewManager nvManager, CyEventHelper eHelper, 
 			CyLayoutAlgorithmManager cyLayoutAlgorithmManager, DialogTaskManager dialogTaskManager, BundleContext context) {
@@ -79,6 +103,25 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 		this.cyLayoutAlgorithmManager = cyLayoutAlgorithmManager;
 		
 		this.dialogTaskManager = dialogTaskManager;
+
+		//moved out to init it first
+		tabPane = new MainTabsPanel();
+		initLabel = new JLabel("VitalAI plugin is being initialized...");
+		tabPane.add(initLabel);
+		//   Register it as a service:
+		activator.registerServiceX(tabPane, CytoPanelComponent.class, new Properties());
+		
+		
+		//init it in separate thread??
+		this.setDaemon(true);
+		this.start();
+		
+	}
+	
+	
+	
+	@Override
+	public void run() {
 		
 		Application.init();
 		
@@ -89,15 +132,15 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 		singleton = this;
 		
 	}
-	
+
+
+
 	private void initTabPane() {
 
-		tabPane = new MainTabsPanel();
+		tabPane.remove(initLabel);
 		
 		initializeConnectionTab();
 
-		//   Register it as a service:
-		activator.registerServiceX(tabPane, CytoPanelComponent.class, new Properties());
 	}
 
 	
@@ -109,34 +152,90 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 	}
 	
 	
-	static void o(String m) { System.out.println(m); }
-
 	@Override
 	public void onLogin() {
 
 		initializeSearchTab();
+		
+		initializePathsTab();
+		
+		initializeDatascriptsTab();
+		
+		tabPane.setSelectedIndex(searchTabIndex);
+		
+//		tabPane.setSelectedIndex(tabPane.indexOfTabComponent(searchTab));
+		
+		
 		
 	}
 
 	@Override
 	public void onLogout() {
 
+		pathsTab.getSegmentsPanel().setSegmentsList(new ArrayList<VitalSegment>(0));
+		searchTab.getSegmentsPanel().setSegmentsList(new ArrayList<VitalSegment>(0));
+		
+		if(datascriptsTab != null) {
+			tabPane.remove(datascriptsTab);
+			datascriptsTab = null;
+		}
+		tabPane.remove(pathsTab);
+		pathsTab = null;
+		
 		tabPane.remove(searchTab);
+		searchTab = null;
+		
 		
 	}
 		
 	private void initializeSearchTab() {
 		
 		searchTab = new SearchTab();
-	    tabPane.insertTab("Search", null, searchTab, null, searchTabIndex);
+		tabPane.addTab("Search", null, searchTab, null);
+//	    tabPane.insertTab("Search", null, searchTab, null, searchTabIndex);
+	    
+	    try {
+			searchTab.getSegmentsPanel().setSegmentsList(Application.get().getServiceSegments());
+		} catch (Exception e) {
+			log.error(e.getLocalizedMessage(), e);
+		}
 	    
 	}
+	
+	private void initializePathsTab() {
+
+		pathsTab = new PathsTab();
+//		tabPane.insertTab("Paths", null, pathsTab, null, pathsTabIndex);
+		tabPane.addTab("Paths", null, pathsTab, null);
+
+	    try {
+			pathsTab.getSegmentsPanel().setSegmentsList(Application.get().getServiceSegments());
+		} catch (Exception e) {
+			log.error(e.getLocalizedMessage(), e);
+		}
+		
+	}
+	
+	private void initializeDatascriptsTab() {
+		
+		if(Application.get().getEndpointType() == EndpointType.VITALPRIME) {
+			
+			datascriptsTab = new DatascriptsTab();
+//		tabPane.insertTab("Datascripts", null, datascriptsTab, null, datascriptsTabIndex);
+			tabPane.addTab("Datascripts", null, datascriptsTab, null);
+			
+		}
+		
+		
+	}
+
+
 	
 //	@SuppressWarnings("unchecked")
 //	@Override
 //	public void propertyChange(PropertyChangeEvent event) {
 //		
-//		System.out.println("PROPERTY CHANGED EVENT :" + event.getPropertyName());
+//		log.debug("PROPERTY CHANGED EVENT :" + event.getPropertyName());
 //		String propertyName = event.getPropertyName();
 //
 //		
@@ -159,7 +258,7 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 //		
 //		if(propertyName == CytoscapeDesktop.NETWORK_VIEW_CREATED ) {
 //			
-//			System.out.println("INSIDE:" + event.getPropertyName() 
+//			log.debug("INSIDE:" + event.getPropertyName() 
 //					+" propVal: " + event.getNewValue() + " source: " + event.getSource() );
 //			
 //			CyNetworkView networkView = (CyNetworkView) event.getNewValue();
@@ -334,23 +433,23 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 //					Iterator<CyLayoutAlgorithm> iterator = allLayouts.iterator();
 //					while(iterator.hasNext()) {
 //						CyLayoutAlgorithm next = iterator.next();
-//						System.out.println(next.getName());
-//						System.out.println("supports selected only? " + next.supportsSelectedOnly());
-//						System.out.println("Initial attributes");
-//						System.out.println(next.getInitialAttributeList());
-//						System.out.println("Settings:");
+//						log.debug(next.getName());
+//						log.debug("supports selected only? " + next.supportsSelectedOnly());
+//						log.debug("Initial attributes");
+//						log.debug(next.getInitialAttributeList());
+//						log.debug("Settings:");
 //						if(next.getSettings() != null) {
 //							HashMap settings = next.getSettings().getProperties();
 //							Iterator iterator2 = settings.keySet().iterator();
 //							while(iterator2.hasNext()) {
 //								Object key = iterator2.next();
-//								System.out.println("\t" +key + "::" + settings.get(key) );
+//								log.debug("\t" +key + "::" + settings.get(key) );
 //							}
 //						}
 //						if(next.getSettingsPanel()!=null) {
 //							next.getSettingsPanel().setVisible(true);
 //						}
-//						System.out.println();
+//						log.debug();
 //					}
 //					
 //				}};
@@ -377,12 +476,12 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
         dp.setTransferHandler(dh); 
 		
 //		TransferHandler transferHandler = internalFrameComponent.getTransferHandler();
-//		System.out.println("Previous transfer handler: " + internalFrameComponent.getTransferHandler());
+//		log.debug("Previous transfer handler: " + internalFrameComponent.getTransferHandler());
 		
 //		internalFrameComponent.setTransferHandler(new MemomicsTransferHandler());		
-//		System.out.println("New transfer handler: " + internalFrameComponent.getTransferHandler());
+//		log.debug("New transfer handler: " + internalFrameComponent.getTransferHandler());
 		
-		System.out.println("DropHandler created for : " + networkView.getTitle());
+		log.debug("DropHandler created for : " + networkView.getTitle());
 		
 
 
@@ -393,7 +492,7 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 
-		o("PROPERTY CHANGED: " + evt);
+		log.debug("PROPERTY CHANGED: " + evt);
 		
 	}
 
@@ -410,6 +509,7 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 	}
 	
 	public static CyNetworkManager getNetworkManager() {
+		if(singleton == null) return null;
 		return singleton.cyNetworkManager;
 	}
 	
@@ -438,6 +538,7 @@ public class VitalAICytoscapePlugin implements LoginListener, PropertyChangeList
 	}
 	
 	public static DialogTaskManager getDialogTaskManager() {
+		if(singleton == null) return null;
 		return singleton.dialogTaskManager;
 	}
 }

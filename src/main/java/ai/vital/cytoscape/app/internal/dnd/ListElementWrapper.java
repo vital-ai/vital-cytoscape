@@ -1,6 +1,5 @@
 package ai.vital.cytoscape.app.internal.dnd;
 
-import ai.vital.domain.SynsetNode;
 import ai.vital.vitalsigns.model.VITAL_Node;
 
 public class ListElementWrapper {
@@ -9,14 +8,14 @@ public class ListElementWrapper {
 
 	private String specialLabel;
 	
-	protected String parentEdgeTypeUMIS;
+	protected String parentEdgeTypeURI;
 	
-	public String getParentEdgeTypeUMIS() {
-		return parentEdgeTypeUMIS;
+	public String getParentEdgeTypeURI() {
+		return parentEdgeTypeURI;
 	}
 
-	public void setParentEdgeTypeUMIS(String parentEdgeTypeUMIS) {
-		this.parentEdgeTypeUMIS = parentEdgeTypeUMIS;
+	public void setParentEdgeTypeURI(String parentEdgeTypeURI) {
+		this.parentEdgeTypeURI = parentEdgeTypeURI;
 	}
 
 //	public ListElementWrapper(ASAPI_Entity entity) {
@@ -26,7 +25,7 @@ public class ListElementWrapper {
 	public ListElementWrapper(VITAL_Node entity, String parentEdgeTypeID, String specialLabel) {
 		super();
 		this.entity = entity;
-		this.parentEdgeTypeUMIS = parentEdgeTypeID;
+		this.parentEdgeTypeURI = parentEdgeTypeID;
 		this.specialLabel = specialLabel;
 	}
 

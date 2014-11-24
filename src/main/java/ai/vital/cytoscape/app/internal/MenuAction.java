@@ -14,6 +14,8 @@ import org.cytoscape.application.swing.AbstractCyAction;
  */
 public class MenuAction extends AbstractCyAction {
 
+	private static final long serialVersionUID = 7475199139900030567L;
+
 	public MenuAction(CyApplicationManager cyApplicationManager, final String menuTitle) {
 		
 		super(menuTitle, cyApplicationManager, null, null);
@@ -24,7 +26,7 @@ public class MenuAction extends AbstractCyAction {
 	public void actionPerformed(ActionEvent e) {
 
 		// Write your own function here.
-		JOptionPane.showMessageDialog(null, "Hello Cytoscape World!");
+		JOptionPane.showMessageDialog(null, "Vital AI Graph Visualization");
 		
 	}
 }

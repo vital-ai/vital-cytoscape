@@ -16,6 +16,7 @@ package ai.vital.cytoscape.app.internal.panels;
 import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -26,12 +27,17 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 
 public class NetworkListPanel extends JPanel implements ItemListener {
 
+	private final static Logger log = LoggerFactory.getLogger(NetworkListPanel.class);
+	
 	private static final long serialVersionUID = 1L;
 	
 	private static int counter = 0;
@@ -40,8 +46,8 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 	
 	public static void notifyNetworkListPanels(String latestRemovedNetwordID) {
 
-		Set<CyNetwork> networkSet = VitalAICytoscapePlugin.getNetworkManager().getNetworkSet();
-		
+		Set<CyNetwork> networkSet = getNetworksSet();
+
 		Iterator<NetworkListPanel> iterator = createdPanels.iterator();
 		
 		while(iterator.hasNext()) {
@@ -50,24 +56,40 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 		
 	}
 	
-    private LinkedHashMap<String, Long> netTitle2ID = new LinkedHashMap<String, Long>();
+    private static Set<CyNetwork> getNetworksSet() {
+
+    	Set<CyNetwork> networkSet = null;
+    	
+		CyNetworkManager networkManager = VitalAICytoscapePlugin.getNetworkManager();
+		if(networkManager != null) {
+			networkSet = networkManager.getNetworkSet();
+		} else {
+			networkSet = new HashSet<CyNetwork>();
+		}
+
+		return networkSet;
+	}
+
+	private LinkedHashMap<String, Long> netTitle2ID = new LinkedHashMap<String, Long>();
 	
     private DefaultComboBoxModel networksComboModel = new DefaultComboBoxModel();
     private JComboBox networksComboBox = new JComboBox(networksComboModel);
     
-	public NetworkListPanel() {
+	public NetworkListPanel(boolean networksListListener) {
 		super();
 		networksComboBox.addItemListener(this);
 		
 		networksComboModel.addElement("<new network>");
 		
-        updateNetworksList(VitalAICytoscapePlugin.getNetworkManager().getNetworkSet(), "");
+        updateNetworksList(getNetworksSet(), "");
         
         setLayout(new BorderLayout());
         
         add(networksComboBox,BorderLayout.CENTER);
         
-        createdPanels.add(this);
+        if(networksListListener) {
+        	createdPanels.add(this);
+        }
 	}
 	
 	public void itemStateChanged(ItemEvent e) {
@@ -81,7 +103,7 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 		
 		netTitle2ID.clear();
 		
-		System.out.println("Updating networks list");
+		log.debug("Updating networks list");
 		
 		int size = networksComboModel.getSize();
 		
@@ -103,10 +125,10 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 			String title = network.getRow(network).get(CyNetwork.NAME, String.class);
 			
 			Long identifier = network.getSUID();
-			System.out.println("Network ID: " + identifier);
+			log.debug("Network ID: " + identifier);
 			
 			if(latestRemovedNetwordID != null && identifier.equals(latestRemovedNetwordID)) {
-				System.out.println("Network withID: "+identifier +" was removed");	
+				log.debug("Network withID: "+identifier +" was removed");	
 			} else {
 				networksComboModel.addElement(title);
 				netTitle2ID.put(title, identifier);
@@ -169,7 +191,7 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 //				
 //					JInternalFrame jif = (JInternalFrame) layeredPane.getParent();
 //					
-//					System.out.println();
+//					log.debug();
 //					
 //				}
 //				
@@ -179,7 +201,7 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 			
 			networkID = getSelectedNetworkID();
 	
-			System.out.println("Existing network title:" + selectedNetworkTitle + "\tid:"  + networkID);
+			log.debug("Existing network title:" + selectedNetworkTitle + "\tid:"  + networkID);
 			
 		}
 		

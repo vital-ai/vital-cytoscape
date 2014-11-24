@@ -23,29 +23,31 @@ import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
 import org.cytoscape.model.CyNetwork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import ai.vital.cytoscape.app.internal.CyActivator;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.VITAL_Node;
 
 
 public class VitalTransferHandler extends TransferHandler {
 
 	private static final long serialVersionUID = 1L;
 
+	private final static Logger log = LoggerFactory.getLogger(VitalTransferHandler.class);
+	
 	public boolean canImport(JComponent comp, DataFlavor[] flavors) {
 		
-		System.out.println("CAN IMPORT launched");
+		log.debug("CAN IMPORT launched");
 		
 		for (int i = 0; i < flavors.length; i++) {
-			System.out.print("\nChecking flavor #"+i+" " + flavors[i].getRepresentationClass() +"...");
+			log.debug("Checking flavor #"+i+" " + flavors[i].getRepresentationClass() +"...");
 			if (flavors[i].equals(VitalEntityFlavor.flavor)) {
-				System.out.print("OK\n");
+				log.debug("OK\n");
 				return true;
 			}
-			System.out.print("NOPE\n");
+			log.debug("NOPE\n");
 		}
 
 		return false;
@@ -53,9 +55,9 @@ public class VitalTransferHandler extends TransferHandler {
 	
 	public boolean importData(JComponent comp, Transferable t) {
 		
-		System.out.println("IMPORT DATA launched");
+		log.debug("IMPORT DATA launched");
 		
-		System.out.println("Transferable : " + t);
+		log.debug("Transferable : " + t);
 		
 		LinkedList<GraphObject> acquiredEntites = new LinkedList<GraphObject>();
 				
@@ -63,7 +65,7 @@ public class VitalTransferHandler extends TransferHandler {
 		for(int i  = 0 ; i < length ; i ++) {
 			DataFlavor dataFlavor = t.getTransferDataFlavors()[i];
 			try {
-				System.out.println("Flavor #"+i+ " " +dataFlavor +
+				log.debug("Flavor #"+i+ " " +dataFlavor +
 						" mimeType: " + dataFlavor.getMimeType() + 
 						"\n\t\ttransferData ="+  t.getTransferData(dataFlavor));
 				
@@ -80,7 +82,7 @@ public class VitalTransferHandler extends TransferHandler {
 					if(transferData instanceof GraphObject[]) {
 						GraphObject[] entites = (GraphObject[]) transferData;
 						for(int j = 0 ; j < entites.length; j ++) {
-							System.out.println("Aqcuired entity: " + entites[j]);
+							log.debug("Aqcuired entity: " + entites[j]);
 							acquiredEntites.add((GraphObject) entites[j]);
 						}
 					}
@@ -99,7 +101,7 @@ public class VitalTransferHandler extends TransferHandler {
 		}
 		
 		if(acquiredEntites.size()== 0) {
-			System.out.println("No entity was acquired !!!");
+			log.debug("No entity was acquired !!!");
 			return false;
 		}
 

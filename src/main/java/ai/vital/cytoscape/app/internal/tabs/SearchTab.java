@@ -25,7 +25,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,8 +49,8 @@ import javax.swing.event.ListSelectionListener;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
-
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
@@ -60,22 +59,15 @@ import ai.vital.cytoscape.app.internal.dnd.ListTransferHandler;
 import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
-import ai.vital.vitalservice.exception.VitalServiceException;
-import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
-import ai.vital.vitalservice.query.VitalPropertyConstraint;
-import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
-import ai.vital.vitalservice.query.VitalQueryContainer;
-import ai.vital.vitalservice.query.VitalTypeConstraint;
-import ai.vital.vitalservice.query.VitalQueryContainer.Type;
-import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.domain.AdjectiveSynsetNode;
-import ai.vital.domain.AdverbSynsetNode;
-import ai.vital.domain.NounSynsetNode;
-import ai.vital.domain.SynsetNode;
-import ai.vital.domain.VerbSynsetNode;
+import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.domain.ontology.VitalOntology;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
+import ai.vital.vitalservice.query.VitalPropertyConstraint;
+import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
+import ai.vital.vitalservice.query.VitalQueryContainer;
+import ai.vital.vitalservice.query.VitalQueryContainer.Type;
+import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
@@ -86,25 +78,31 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	private static final long serialVersionUID = 1L;
 	
+	private final static Logger log = LoggerFactory.getLogger(SearchTab.class);
+	
 	private final static String MEME = "Meme Search";
 	
 	private final static String DOCUMENT = "Document Search";
 
 	private JTextField textField = new JTextField("", 20);
 
+	@SuppressWarnings("rawtypes")
 	private JComboBox searchTypeCombo = new JComboBox();
 
+	@SuppressWarnings("rawtypes")
 	private JComboBox nameSpaceCombo = new JComboBox();
 
 	private JButton searchButton;
 
 	private JButton importButton;
 
-	private NetworkListPanel networkListPanel = new NetworkListPanel();
+	private NetworkListPanel networkListPanel = new NetworkListPanel(true);
 
+	@SuppressWarnings("rawtypes")
 	private DefaultListModel listModel = new DefaultListModel();
 	private LinkedHashMap<String, VITAL_Node> entities = new LinkedHashMap<String, VITAL_Node>();
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private JList rsList = new JList(listModel);
 
 	private QueryListener queryListener = new QueryListener();
@@ -116,7 +114,10 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 	
 	private JRadioButton andRadioButton = new JRadioButton("AND");
 	private JRadioButton orRadioButton = new JRadioButton("OR");
+
+	private SegmentsPanel segmentsPanel = new SegmentsPanel();
 	
+	@SuppressWarnings("unchecked")
 	public SearchTab() {
 		super();
 
@@ -124,7 +125,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 			public void keyReleased(KeyEvent e) {
 				
-//				System.out.println("KEY:" + e.getKeyCode());
+//				log.debug("KEY:" + e.getKeyCode());
 				
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) {
 					searchButton.doClick();
@@ -295,6 +296,8 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		namespacePanel.add(Box.createRigidArea(new Dimension(hspace, 0)));
 
 //		northPanel.add(namespacePanel);
+		segmentsPanel.setPreferredSize(new Dimension(0, 100));
+		northPanel.add(segmentsPanel);
 
 		return northPanel;
 	}
@@ -346,15 +349,24 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	private class QueryListener implements ActionListener {
 
+		@SuppressWarnings("unchecked")
 		public void actionPerformed(ActionEvent e) {
 			if (searchButton.isEnabled()) {
 
+				List<VitalSegment> segments = segmentsPanel.getSelectedSegments();
+				
+				if(segments.size() < 1) {
+					JOptionPane.showMessageDialog(null, "No segments selected - at least one required to perform search", "No segments selected", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
 				listModel.clear();
 
 				lastResults.clear();
 
 				entities.clear();
 
+				
 //				ConsolePanel.log("\nPerforming query...");
 				
 				VitalSelectQuery sq = new VitalSelectQuery();
@@ -362,7 +374,6 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				sq.setLimit(100);
 				sq.setOffset(0);
 				sq.setProjectionOnly(false);
-				List<VitalSegment> segments = new ArrayList<VitalSegment>();
 				sq.setType(Type.or);
 
 				
@@ -370,10 +381,6 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				
 				String[] split = searchString.split("\\s+");
 				
-				Class[] types = new Class[]{
-					AdjectiveSynsetNode.class, AdverbSynsetNode.class,
-					NounSynsetNode.class, VerbSynsetNode.class
-				};
 
 				//main containers
 				List<VitalQueryContainer> keywordsContainers = new ArrayList<VitalQueryContainer>();
@@ -386,7 +393,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 //					String rdfType = //VitalSigns.get().getRDFClass(cls);
 //							VitalOntology.NS + cls.getSimpleName();
 					
-//					System.out.println(cls.getSimpleName() + " -> " + rdfType);
+//					log.debug(cls.getSimpleName() + " -> " + rdfType);
 					
 //					qc.getComponents().add(new VitalTypeConstraint(cls));
 					
@@ -443,14 +450,6 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					
 				}
 
-				
-				
-				try {
-					segments = Application.get().getServiceSegments();
-				} catch (Exception e2) {
-					JOptionPane.showConfirmDialog(null, "Couldn't list service segments - falling back to wordnet...");
-					segments.add(Application.get().getWordnetSegment());
-				}
 				
 				Set<String> uris = new HashSet<String>();
 				
@@ -579,7 +578,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					CyNetwork cyNetwork = networkListPanel.getSelectedNetwork();
 
 					Utils.placeNodesInTheNetwork(cyNetwork, entities);
-
+					
 					// Utils.applyVisualStyle(cyNetwork);
 
 					// if(newNetworkMenu) {
@@ -598,7 +597,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 //						networkView.updateView();
 						
-						System.out.println("Updating network view...");
+						log.debug("Updating network view...");
 						VisualStyleUtils.applyVisualStyle(networkView);
 
 					}
@@ -671,8 +670,8 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	}
 
-	public VITAL_Node getEntity(String umis) {
-		return entities.get(umis);
+	public VITAL_Node getEntity(String URI) {
+		return entities.get(URI);
 	}
 
 	public void itemStateChanged(ItemEvent e) {
@@ -692,5 +691,10 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		 */
 	}
 
+	public SegmentsPanel getSegmentsPanel() {
+		return segmentsPanel;
+	}
+
+	
 
 }

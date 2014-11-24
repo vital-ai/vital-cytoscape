@@ -18,9 +18,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+
+import javax.swing.JOptionPane;
 
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyEdge.Type;
@@ -33,6 +33,8 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
@@ -41,12 +43,13 @@ import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
-import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
 
 public class ExpandNodesTask implements Task {
+
+	private final static Logger log = LoggerFactory.getLogger(ExpandNodesTask.class);
 	
 	private View<CyNode> initialNode = null;
 
@@ -104,6 +107,7 @@ public class ExpandNodesTask implements Task {
 		return title;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void halt() {
 //		isInterrupted = true;
 		thread.stop();
@@ -153,8 +157,7 @@ public class ExpandNodesTask implements Task {
 		if (uri_str != null && !uri_str.equals("")) {
 
 			
-			//entity UMIS 2 attributesUMISes
-			HashMap<String, Set<String>> attributesToGet = new HashMap<String, Set<String>>();
+			//entity URI 2 attributesURIs
 			HashMap<Long, GraphObject> nodeID2Entity = new HashMap<Long, GraphObject>(); 
 			
 			for (int k = 0; k < objects.size(); k++) {
@@ -172,7 +175,7 @@ public class ExpandNodesTask implements Task {
 
 						// skip center
 
-//						map.put(node_umis, node_id);
+//						map.put(node_uri, node_id);
 
 						continue;
 					}
@@ -191,12 +194,12 @@ public class ExpandNodesTask implements Task {
 							
 							createdNodes.add(node);
 							createdIds.add(node.getSUID());
-							System.out.println("Node with UMIS:" + node_uri+ " added.");
+							log.debug("Node with URI:" + node_uri+ " added.");
 						}
 					} else {
 						
 						View<CyNode> nodeView = myView.getNodeView(node);
-						System.out.println("Node with URI:" + node_uri+ " already exists in this network!");
+						log.debug("Node with URI:" + node_uri+ " already exists in this network!");
 						nodeViews.add(nodeView);
 						
 					}
@@ -212,8 +215,6 @@ public class ExpandNodesTask implements Task {
 				if (entity instanceof VITAL_Edge) {
 
 					VITAL_Edge relation = (VITAL_Edge) entity;
-					
-					String edgeTypeURI = VitalSigns.get().getRDFClass(relation.getClass());
 					
 					String destination_uri = relation.getDestinationURI();
 					String source_uri = relation.getSourceURI();
@@ -234,7 +235,6 @@ public class ExpandNodesTask implements Task {
 						destNode = cyNet.getNode(destination_node.getSUID());
 						
 						if(mode == MARKED_ONLY && destNode != null) {
-							Long identifier = destNode.getSUID();
 							if(selectedIndices.contains(destNode.getSUID())) {
 								D_S = true;
 							}
@@ -248,7 +248,6 @@ public class ExpandNodesTask implements Task {
 					if(source_node != null) {
 						sourceNode = cyNet.getNode(source_node.getSUID());
 						if(mode == MARKED_ONLY && sourceNode != null) {
-							Long identifier = sourceNode.getSUID();
 							if(selectedIndices.contains(sourceNode.getSUID())) {
 								S_S = true;
 							}
@@ -272,12 +271,12 @@ public class ExpandNodesTask implements Task {
 					}
 					
 					if(destNode == null || sourceNode == null) {
-						System.out.println("Relation "+ relation.getSourceURI() + "::"+relation.getClass().getSimpleName()+"::"+relation.getDestinationURI()+" cannot be added"); 
+						log.debug("Relation "+ relation.getSourceURI() + "::"+relation.getClass().getSimpleName()+"::"+relation.getDestinationURI()+" cannot be added"); 
 						if(destination_node == null) {
-							System.out.println("Destination node is null! (UMIS:"+destination_uri+")");
+							log.debug("Destination node is null! (URI:"+destination_uri+")");
 						} 
 						if(source_node == null) {
-							System.out.println("Soruce node is null! (UMIS:"+source_uri+")");
+							log.debug("Soruce node is null! (URI:"+source_uri+")");
 						}
 						continue;
 					}
@@ -300,13 +299,13 @@ public class ExpandNodesTask implements Task {
 					}
 
 					if(found != null) {
-						System.out.println("Edge with URI:" + entity.getURI() + " already exists.");
+						log.debug("Edge with URI:" + entity.getURI() + " already exists.");
 						continue;
 					}
 					
 					CyEdge edge = cyNet.addEdge(source_node,destination_node, true); // directed
 	
-					System.out.println("Edge ID: "+ edge.getSUID());
+					log.debug("Edge ID: "+ edge.getSUID());
 					
 					Utils.setEdgeAttributes(cyNet, edge, relation);
 							
@@ -360,6 +359,7 @@ public class ExpandNodesTask implements Task {
 	}
 	
 	
+	@SuppressWarnings("unused")
 	private void unselectAllNodes(CyNetwork cyNet) {
 		for(CyNode n : cyNet.getNodeList()) {
 			cyNet.getRow(n).set(CyNetwork.SELECTED, false);
@@ -367,7 +367,6 @@ public class ExpandNodesTask implements Task {
 	}
 
 
-	static void o(String m) {System.out.println(m);}
 	private class ExpansionThread extends Thread {
 
 		@Override
@@ -395,11 +394,7 @@ public class ExpandNodesTask implements Task {
 				}
 			}
 			
-			CyNode cyNode = null;
-			CyEdge cyEdge;
 			View<CyNode> nv;
-			View<CyEdge> ev;
-			
 			
 			HashSet<Long> createdIds = new HashSet<Long>();
 
@@ -476,8 +471,8 @@ public class ExpandNodesTask implements Task {
 	        		
 	        		String uri = cyNet.getRow(next).get(Attributes.uri, String.class);
 	        		
-	        		if(umis != null && !umis.equals("")) {
-	        			ASAPI_Response synonyms2 = Application.get().getSynonyms(umis);
+	        		if(uri  != null && !uri.equals("")) {
+	        			ASAPI_Response synonyms2 = Application.get().getSynonyms(uri);
 	        			Iterator iterator = synonyms2.getObjects().iterator();
 	        			LinkedList<ASAPI_Entity> objects = new LinkedList<ASAPI_Entity>();
 	        			while(iterator.hasNext()) {
@@ -505,46 +500,66 @@ public class ExpandNodesTask implements Task {
 	        }
 	        */
 	        
-			processed_nodes = 1;
+			processed_nodes = 0;
 			size = nodeViews.size();
 			step = (double)left/(double)size;
 	        
+			int nouris = 0;
 			
 	        
 			while (i.hasNext()) {
 				
-				taskMonitor.setStatusMessage("Expanding node " + processed_nodes + " of " + size);
+				taskMonitor.setStatusMessage("Expanding node " + (processed_nodes+1) + " of " + size);
 				
-				System.out.println("Expanding node " + processed_nodes + " of " + size);
-				
-				
+				log.debug("Expanding node " + (processed_nodes+1) + " of " + size);
 				
 				nv = i.next();
 				
-				if(nv == null) continue;
-				
-//				String node_id = nv.getNode().getIdentifier();
-
-				//XXX
-//				CyNode cn = Cytoscape.getCyNode(node_id, false);
-				CyNode cn = (CyNode) nv.getModel();
-				
-				String uri_str = cyNet.getRow(cn).get(Attributes.uri, String.class);
-
-				List<GraphObject> objects = new ArrayList<GraphObject>();
-				
-				ResultList rs_connections = Application.get().getConnections(uri_str);
-				for(ResultElement g : rs_connections.getResults()) {
-					objects.add(g.getGraphObject());
+				if(nv == null) {
+					
+					log.warn("Null node view");
+					
+				} else {
+					
+//					String node_id = nv.getNode().getIdentifier();
+					
+					//XXX
+//					CyNode cn = Cytoscape.getCyNode(node_id, false);
+					CyNode cn = (CyNode) nv.getModel();
+					
+					String uri_str = cyNet.getRow(cn).get(Attributes.uri, String.class);
+					
+					if(uri_str == null || uri_str.trim().isEmpty()) {
+						
+						log.warn("Node without URI attribute (" + nv.getSUID() + ") - skipping...");
+						
+						nouris++;
+						
+					} else {
+						
+						List<GraphObject> objects = new ArrayList<GraphObject>();
+						
+						ResultList rs_connections = Application.get().getConnections(uri_str);
+						for(ResultElement g : rs_connections.getResults()) {
+							objects.add(g.getGraphObject());
+						}
+						
+//						objects = filterNodesAndSegments(rs_relations);
+						
+						processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+						
+						
+						
+					}
+					
+					
 				}
 				
-//				objects = filterNodesAndSegments(rs_relations);
-					
-				processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+				
 				
 				
 				/*XXX relations disabled
-				ASAPI_Response rs_relations = Application.get().getRelations(umis_str);
+				ASAPI_Response rs_relations = Application.get().getRelations(uri_str);
 
 				LinkedList<ASAPI_RelationGroup> relations = new LinkedList<ASAPI_RelationGroup>();
 				
@@ -587,7 +602,13 @@ public class ExpandNodesTask implements Task {
 				cyNet.getRow(nv_.getModel()).set(CyNetwork.SELECTED, true);
 			}
 			
+			
+			if(nouris > 0 && processed_nodes == nouris) {
+				JOptionPane.showMessageDialog(null, "No nodes with URI property, at least one required", "Expansion error", JOptionPane.ERROR_MESSAGE);
+			}
+			
 		}
+		
 	}
 
 

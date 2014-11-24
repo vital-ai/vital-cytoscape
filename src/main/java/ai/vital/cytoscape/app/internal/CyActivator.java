@@ -1,5 +1,6 @@
 package ai.vital.cytoscape.app.internal;
 
+import java.util.Collection;
 import java.util.Properties;
 
 import org.cytoscape.application.CyApplicationManager;
@@ -19,16 +20,19 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.swing.DialogTaskManager;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.NetworkListener;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
-import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.tasks.ExpandNodesViewTaskFactory;
 
 public class CyActivator extends AbstractCyActivator {
 
 	private BundleContext context = null;
+	
+	private final static Logger log = LoggerFactory.getLogger(CyActivator.class);
 	
 	@Override
 	public void start(BundleContext context) throws Exception {
@@ -51,7 +55,7 @@ public class CyActivator extends AbstractCyActivator {
 		
 		registerAllServices(context, action, properties);
 		
-		System.out.println("Starting plugin...");
+		log.info("Starting Vital AI plugin...");
 		
 		NetworkListener nl = new NetworkListener();
 		
@@ -63,13 +67,16 @@ public class CyActivator extends AbstractCyActivator {
 		
 		// Register myNodeViewTaskFactory as a service in CyActivator
 		Properties myNodeViewTaskFactoryProps = new Properties();
-		myNodeViewTaskFactoryProps.setProperty("title","Expand Nodes with Vital AI Service");
+		myNodeViewTaskFactoryProps.setProperty("title","Expand Nodes"); // with Vital AI Service
+		myNodeViewTaskFactoryProps.put("preferredMenu", "Vital AI");
 		registerService(context, new ExpandNodesViewTaskFactory(), NodeViewTaskFactory.class, myNodeViewTaskFactoryProps);
 		
 		CyLayoutAlgorithmManager cyLayoutAlgorithmManager = getService(context, CyLayoutAlgorithmManager.class);
 		
-		for(CyLayoutAlgorithm l : cyLayoutAlgorithmManager.getAllLayouts()) {
-			System.out.println(l.getName() + " " + l.getSupportsSelectedOnly());
+		Collection<CyLayoutAlgorithm> allLayouts = cyLayoutAlgorithmManager.getAllLayouts();
+		log.info("Supported layouts [" + allLayouts.size() + "]");
+		for(CyLayoutAlgorithm l : allLayouts) {
+			log.info(l.getName() + " " + l.getSupportsSelectedOnly());
 		}
 		
 		DialogTaskManager dialogTaskManager = getService(context, DialogTaskManager.class);

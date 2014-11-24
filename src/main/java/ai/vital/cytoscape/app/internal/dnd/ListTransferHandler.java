@@ -27,10 +27,12 @@ public class ListTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = 1L;
 	
 
+	@SuppressWarnings("rawtypes")
 	public ListTransferHandler(JList list) {
 		super();
 	}
 
+	@SuppressWarnings("rawtypes")
 	protected Transferable createTransferable(JComponent c) {
 		JList list = (JList) c;
 		DefaultListModel listModel = (DefaultListModel) list.getModel();

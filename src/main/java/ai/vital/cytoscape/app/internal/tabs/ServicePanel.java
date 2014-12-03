@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -157,9 +158,15 @@ public class ServicePanel extends JPanel implements LoginListener {
 		loginButtonPanelRow.setBorder(new EmptyBorder(2,2,2,2));
 //		loginButtonPanelRow.setAlignmentX(RIGHT_ALIGNMENT);
 		loginButtonPanelRow.add(message, BorderLayout.CENTER);
-		loginButtonPanelRow.add(connectButton, BorderLayout.EAST);
 		
-		connectButton.setPreferredSize(new Dimension(70,25));
+		JPanel connectButtonWrapper = new JPanel();
+		connectButtonWrapper.setLayout(new BoxLayout(connectButtonWrapper, BoxLayout.X_AXIS));
+		connectButtonWrapper.add(connectButton);
+		connectButtonWrapper.add(Box.createRigidArea(new Dimension(15, 1)));
+		
+		loginButtonPanelRow.add(connectButtonWrapper, BorderLayout.EAST);
+		
+		//connectButton.setPreferredSize(new Dimension(70,25));
 		
 //		
 //		notLoggedInPanel.add(message);

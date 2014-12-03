@@ -529,9 +529,17 @@ public class ExpandNodesTask implements Task {
 					
 					String uri_str = cyNet.getRow(cn).get(Attributes.uri, String.class);
 					
+					String typeURI = cyNet.getRow(cn).get(Attributes.nodeTypeURI, String.class);
+					
 					if(uri_str == null || uri_str.trim().isEmpty()) {
 						
 						log.warn("Node without URI attribute (" + nv.getSUID() + ") - skipping...");
+						
+						nouris++;
+						
+					} else if(typeURI == null || typeURI.trim().isEmpty()) {
+						
+						log.warn("Node type URI is null or empty (" + nv.getSUID() + ") - skipping...");
 						
 						nouris++;
 						
@@ -539,7 +547,8 @@ public class ExpandNodesTask implements Task {
 						
 						List<GraphObject> objects = new ArrayList<GraphObject>();
 						
-						ResultList rs_connections = Application.get().getConnections(uri_str);
+						//get filters and direction from path tab
+						ResultList rs_connections = Application.get().getConnections(uri_str, typeURI);
 						for(ResultElement g : rs_connections.getResults()) {
 							objects.add(g.getGraphObject());
 						}

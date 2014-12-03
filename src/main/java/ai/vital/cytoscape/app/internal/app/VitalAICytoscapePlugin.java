@@ -1,11 +1,10 @@
 package ai.vital.cytoscape.app.internal.app;
 
+import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Properties;
 
 import javax.swing.JLabel;
@@ -31,10 +30,9 @@ import ai.vital.cytoscape.app.internal.tabs.ConnectionTab;
 import ai.vital.cytoscape.app.internal.tabs.DatascriptsTab;
 import ai.vital.cytoscape.app.internal.tabs.MainTabsPanel;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab;
+import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.cytoscape.app.internal.tabs.SearchTab;
 import ai.vital.endpoint.EndpointType;
-import ai.vital.vitalservice.exception.VitalServiceException;
-import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.segment.VitalSegment;
 
 public class VitalAICytoscapePlugin extends Thread implements LoginListener, PropertyChangeListener {
@@ -106,6 +104,7 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 
 		//moved out to init it first
 		tabPane = new MainTabsPanel();
+		tabPane.setPreferredSize(new Dimension(400, 0));
 		initLabel = new JLabel("VitalAI plugin is being initialized...");
 		tabPane.add(initLabel);
 		//   Register it as a service:
@@ -540,5 +539,12 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 	public static DialogTaskManager getDialogTaskManager() {
 		if(singleton == null) return null;
 		return singleton.dialogTaskManager;
+	}
+
+
+
+	public static ExpansionDirection getExpansionDirection() {
+		if(singleton == null || singleton.pathsTab == null) return null;
+		return singleton.pathsTab.getExpansionDirection();
 	}
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +16,9 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.Job;
-import ai.vital.domain.SuperAdminDatascript;
-import ai.vital.domain.SuperAdminJob;
 import ai.vital.endpoint.EndpointType;
 import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
@@ -30,6 +30,7 @@ import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.Factory;
 import ai.vital.vitalservice.model.App;
 import ai.vital.vitalservice.model.Customer;
+import ai.vital.vitalservice.query.QueryPathElement;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalPropertyConstraint;
@@ -37,10 +38,13 @@ import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
 import ai.vital.vitalservice.query.VitalQueryContainer;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
+import ai.vital.vitalsigns.RDF2Groovy;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.datatype.VitalURI;
 import ai.vital.vitalsigns.global.GlobalHashTable;
+import ai.vital.vitalsigns.meta.GraphSetsRegistry;
 import ai.vital.vitalsigns.model.GraphObject;
+import ai.vital.vitalsigns.model.PathElement;
 import ai.vital.vitalsigns.model.URIPropertyValue;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
@@ -274,7 +278,7 @@ public class Application {
 		return false;
 	}
 
-	public ResultList getConnections(String uri_str) {
+	public ResultList getConnections(String uri_str, String typeURI) {
 
 		//expansion
 		/*
@@ -286,6 +290,9 @@ public class Application {
 		}
 		if(graphObject == null) return new ResultSet();
 		*/
+		
+		ExpansionDirection direction = VitalAICytoscapePlugin.getExpansionDirection();
+		
 		
 		ResultList rs = new ResultList();
 		List<ResultElement> li = new ArrayList<ResultElement>();
@@ -309,8 +316,12 @@ public class Application {
 			sq.setOffset(0);
 			sq.setType(VitalQueryContainer.Type.or);
 			
-			sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeSource.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
-			sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeDestination.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+				sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeSource.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
+			}
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+				sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeDestination.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
+			}
 			
 			ResultList rl = VitalSigns.get().doSelectQuery(domainSegment, sq);
 			for(ResultElement r : rl.getResults()) {
@@ -336,7 +347,41 @@ public class Application {
 		if(serviceSegments.size() > 0){
 		
 		try {
-			GraphObject graphObjectExpanded = vitalService.getExpandedInSegments(VitalURI.withString(uri_str), serviceSegments );
+			
+			Class<? extends GraphObject> gClass = VitalSigns.get().getGroovyClass(typeURI);
+			
+			if(gClass == null) {
+				log.warn("No groovy class for URI: " + typeURI);
+				return rs;
+			}
+			
+			//paths list 
+			List<List<PathElement>> vpaths = GraphSetsRegistry.get().getPaths(gClass);
+			
+			if(vpaths.size() < 1) {
+				log.warn("Default taxonomy paths list for class: " + gClass.getCanonicalName() + " is empty - cannot expand the object");
+				return rs;
+			}
+				
+			List<List<QueryPathElement>> paths = new ArrayList<List<QueryPathElement>>(vpaths.size());
+			
+			//convert paths into query path elements
+			for(List<PathElement> path : vpaths) {
+				
+				List<QueryPathElement> qpath = new ArrayList<QueryPathElement>(path.size());
+				
+				for(PathElement pe : path) {
+					Class<? extends VITAL_Edge> edgeClass = VitalSigns.get().getGroovyClass(pe.getEdgeTypeURI());
+					QueryPathElement qpe = new QueryPathElement(edgeClass, null, pe.isReversed() ? QueryPathElement.Direction.forward : QueryPathElement.Direction.reverse, QueryPathElement.CollectEdges.yes, QueryPathElement.CollectDestObjects.yes);
+					qpath.add(qpe);
+				}
+				
+				paths.add(qpath);
+				
+			}
+			
+			
+			GraphObject graphObjectExpanded = vitalService.getExpandedInSegmentsWithPaths(VitalURI.withString(uri_str), serviceSegments, paths);
 //			o("Expanded: " + graphObjectExpanded);
 			if(graphObjectExpanded instanceof VITAL_Node) {
 				VITAL_Node n = (VITAL_Node) graphObjectExpanded;
@@ -418,11 +463,7 @@ public class Application {
 			for( Iterator<GraphObject> iterator = scripts.iterator(); iterator.hasNext(); ) {
 				
 				GraphObject g = iterator.next();
-				if(g instanceof SuperAdminDatascript) {
-					iterator.remove();
-					continue;
-				}
-				if(g instanceof Job || g instanceof SuperAdminJob) {
+				if(g instanceof Job) {
 					Boolean callable = (Boolean) g.getProperty("callable");
 					if(callable == null || callable.equals(Boolean.FALSE)) {
 						iterator.remove();
@@ -483,6 +524,143 @@ public class Application {
 			Map<String, Object> runParamsF) throws Exception {
 
 		return vitalService.callFunction(path, runParamsF);
+		
+	}
+
+	public static class HierarchyNode {
+		
+		public Class<? extends GraphObject> cls;
+		
+		public String URI;
+		
+		public List<HierarchyNode> children = new ArrayList<HierarchyNode>();
+		
+		@Override
+		public String toString() {
+			return cls != null ? cls.getSimpleName() : "(error)";
+		}
+		
+	}
+	
+	
+	HierarchyNode root = new HierarchyNode();
+	
+	public HierarchyNode getClassHierarchy(Class<? extends GraphObject> rootClass) throws Exception {
+
+		//prefetch the entire tree
+
+		if(root.URI == null) {
+			
+			synchronized(root) {
+				
+				if(root.URI == null) {
+					
+					initializeHierarchy();
+					
+				}
+				
+			}
+			
+		}
+		
+		//seek
+		HierarchyNode m = findRoot(root, rootClass);
+		
+		if(m == null) throw new Exception("Class not found in hierarchy: " + rootClass.getCanonicalName());
+		
+		return m;
+		
+	}
+
+	private HierarchyNode findRoot(HierarchyNode root2,
+			Class<? extends GraphObject> toFind) {
+		
+		if(root2.cls.equals(toFind)) {
+			return root2;
+		}
+		
+		for(HierarchyNode c : root2.children) {
+			
+			HierarchyNode hit = findRoot(c, toFind);
+			if(hit != null) return hit;
+			
+		}
+		
+		return null;
+	}
+
+	private void initializeHierarchy() throws Exception {
+		
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("class", GraphObject.class.getCanonicalName());
+		ResultList rl = vitalService.callFunction("commons/scripts/GetClassHierarchy.groovy", params);
+		
+		if(rl.getStatus().getStatus() != VitalStatus.Status.ok) throw new Exception("Vital service error: " + rl.getStatus().getMessage());
+		
+		Map<String, VITAL_Node> nodes = new HashMap<String, VITAL_Node>();
+		
+		Map<String, List<String>> src2Dest= new HashMap<String, List<String>>();
+		
+		for(ResultElement r : rl.getResults()) {
+			
+			GraphObject g = r.getGraphObject();
+			
+			if(g instanceof VITAL_Node) {
+				
+				nodes.put(g.getURI(), (VITAL_Node) g);
+				
+			} else if(g instanceof VITAL_Edge) {
+				
+				VITAL_Edge e = (VITAL_Edge) g;
+				
+				List<String> l = src2Dest.get(e.getSourceURI());
+				
+				if(l == null) {
+					l = new ArrayList<String>();
+					src2Dest.put(e.getSourceURI(), l);
+				}
+				
+				l.add(e.getDestinationURI());
+				
+				
+			}
+			
+		}
+		
+		VITAL_Node rootNode = nodes.get(VitalCoreOntology.NS + GraphObject.class.getSimpleName());
+		
+		if(rootNode == null) throw new Exception("No hierarchy root node found in results list");
+		
+		root.cls = GraphObject.class;
+		root.URI = rootNode.getURI();
+		
+		processHierarchy(root, nodes, src2Dest);
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	private void processHierarchy(HierarchyNode parent,
+			Map<String, VITAL_Node> nodes, Map<String, List<String>> src2Dest) throws Exception {
+		
+		List<String> uris = src2Dest.get(parent.URI);
+		
+		if(uris == null) return;
+		
+		for(String u : uris) {
+			
+			VITAL_Node n = nodes.get(u);
+			
+			if(n == null) throw new Exception("No class node with URI: " + u);
+			
+			HierarchyNode child = new HierarchyNode();
+			child.URI = u;
+			child.cls = (Class<? extends GraphObject>) Class.forName((String) n.getProperty("name"));
+			
+			parent.children.add(child);
+			
+			processHierarchy(child, nodes, src2Dest);
+			
+		}
 		
 	}
 

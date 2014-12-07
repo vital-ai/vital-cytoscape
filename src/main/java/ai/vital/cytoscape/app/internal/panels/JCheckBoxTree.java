@@ -1,4 +1,6 @@
 package ai.vital.cytoscape.app.internal.panels;
+
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.MouseEvent;

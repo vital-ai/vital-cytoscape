@@ -18,9 +18,6 @@ public class ListElementWrapper {
 		this.parentEdgeTypeURI = parentEdgeTypeURI;
 	}
 
-//	public ListElementWrapper(ASAPI_Entity entity) {
-//		this(entity,null);
-//	}
 	
 	public ListElementWrapper(VITAL_Node entity, String parentEdgeTypeID, String specialLabel) {
 		super();
@@ -41,8 +38,8 @@ public class ListElementWrapper {
 	public String toString() {
 		if(specialLabel != null) {
 			return specialLabel;
-//		} else if(entity instanceof SynsetNode) {
-//			return (String) entity.getProperty("name");
+
+
 		} else {
 			String s = (String) entity.getProperty("name");
 			if(s == null || s.isEmpty()) {

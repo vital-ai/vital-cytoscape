@@ -372,7 +372,7 @@ public class Application {
 				
 				for(PathElement pe : path) {
 					Class<? extends VITAL_Edge> edgeClass = VitalSigns.get().getGroovyClass(pe.getEdgeTypeURI());
-					QueryPathElement qpe = new QueryPathElement(edgeClass, null, pe.isReversed() ? QueryPathElement.Direction.forward : QueryPathElement.Direction.reverse, QueryPathElement.CollectEdges.yes, QueryPathElement.CollectDestObjects.yes);
+					QueryPathElement qpe = new QueryPathElement(edgeClass, null, pe.isReversed() ? QueryPathElement.Direction.reverse : QueryPathElement.Direction.forward, QueryPathElement.CollectEdges.yes, QueryPathElement.CollectDestObjects.yes);
 					qpath.add(qpe);
 				}
 				

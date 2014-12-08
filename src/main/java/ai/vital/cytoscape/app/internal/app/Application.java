@@ -292,6 +292,7 @@ public class Application {
 		
 		ExpansionDirection direction = VitalAICytoscapePlugin.getExpansionDirection();
 		
+		if(direction == null) direction = ExpansionDirection.Outgoing;
 		
 		ResultList rs = new ResultList();
 		List<ResultElement> li = new ArrayList<ResultElement>();
@@ -355,8 +356,15 @@ public class Application {
 			}
 			
 			//paths list 
-			List<List<PathElement>> vpaths = GraphSetsRegistry.get().getPaths(gClass);
-//			vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, false));
+			List<List<PathElement>> vpaths = new ArrayList<List<PathElement>>();
+			
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+				vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, true));
+			}
+			
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+				vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, false));
+			}
 			
 			if(vpaths.size() < 1) {
 				log.warn("Default taxonomy paths list for class: " + gClass.getCanonicalName() + " is empty - cannot expand the object");

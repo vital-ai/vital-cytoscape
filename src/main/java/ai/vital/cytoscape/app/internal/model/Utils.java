@@ -55,8 +55,6 @@ public class Utils {
 	
 	public static final String vitalVisualStyleName = "vitalVisualStyle";
 	
-	private static final String nodeLabelAttributeName = Attributes.canonicalName; 
-	
 //	public static final CyLayoutAlgorithm forceDirectedLayout = CyLayouts.getLayout("force-directed");
 	
 //	public static final CyLayoutAlgorithm jgraph_radial_tree = CyLayouts.getLayout("jgraph-radial-tree");

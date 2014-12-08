@@ -1,21 +1,6 @@
-/*
- * Copyright 2008 Alitora Systems
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use these files except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
 package ai.vital.cytoscape.app.internal.model;
 
-import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,15 +16,12 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyEdge.Type;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Attr;
 
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 import ai.vital.vitalsigns.VitalSigns;
@@ -67,11 +49,6 @@ public class Utils {
 	
 	
 	
-//	public final static String virtualSummarization_relation_NodeTypeID = "memomics.hypernode.virtual-summarization-relation";
-//	public final static String virtualSummarization_relation_EdgeTypeID = "memomics.hyperedge.virtual-summarization-relation";
-//	
-//	public final static String virtualSummarization_fact_NodeTypeID = "memomics.hypernode.virtual-summarization-fact";
-//	public final static String virtualSummarization_fact_EdgeTypeID = "memomics.hyperedge.virtual-summarization-fact";
 	
 	public static String virtualConnector_NodeTypeID = "memomics.hypernode.virtual-connector";
 	
@@ -90,6 +67,7 @@ public class Utils {
 //	private static CyLayoutAlgorithm kamada_kawai = null; //CyLayouts.getLayout("kamada-kawai");
 	
 //	private static CyLayoutAlgorithm force_directed = null; //CyLayouts.getLayout("force-directed");
+	
 	private static boolean initialized = false;
 
 	/*

@@ -25,7 +25,6 @@ public class MenuAction extends AbstractCyAction {
 
 	public void actionPerformed(ActionEvent e) {
 
-		// Write your own function here.
 		JOptionPane.showMessageDialog(null, "Vital AI Graph Visualization");
 		
 	}

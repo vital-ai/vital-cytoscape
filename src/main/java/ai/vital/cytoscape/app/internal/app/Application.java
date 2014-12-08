@@ -38,7 +38,6 @@ import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
 import ai.vital.vitalservice.query.VitalQueryContainer;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
-import ai.vital.vitalsigns.RDF2Groovy;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.datatype.VitalURI;
 import ai.vital.vitalsigns.global.GlobalHashTable;
@@ -594,7 +593,7 @@ public class Application {
 		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("class", GraphObject.class.getCanonicalName());
-		ResultList rl = vitalService.callFunction("commons/scripts/GetClassHierarchy.groovy", params);
+		ResultList rl = vitalService.callFunction("commons/scripts/GetClassHierarchy", params);
 		
 		if(rl.getStatus().getStatus() != VitalStatus.Status.ok) throw new Exception("Vital service error: " + rl.getStatus().getMessage());
 		

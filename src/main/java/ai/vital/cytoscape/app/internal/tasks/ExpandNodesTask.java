@@ -1,16 +1,3 @@
-/*
- * Copyright 2008 Alitora Systems
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use these files except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
 package ai.vital.cytoscape.app.internal.tasks;
 
 import java.util.ArrayList;
@@ -567,25 +554,7 @@ public class ExpandNodesTask implements Task {
 				
 				
 				
-				/*XXX relations disabled
-				ASAPI_Response rs_relations = Application.get().getRelations(uri_str);
-
-				LinkedList<ASAPI_RelationGroup> relations = new LinkedList<ASAPI_RelationGroup>();
 				
-				for(Iterator<Object> iterator = rs_relations.getObjects().iterator(); iterator.hasNext(); ) {
-					Object next = iterator.next();
-					if(next instanceof ASAPI_RelationGroup) {
-						relations.add((ASAPI_RelationGroup) next);
-					}
-				}
-				
-				
-//		        map.put(ACTIVATING_MEDIATOR, EdgeRole.SOURCE);
-//		        map.put(INHIBITING_MEDIATOR, EdgeRole.SOURCE);
-//		        map.put(SUBSTRATE, EdgeRole.SOURCE);
-//		        map.put(PRODUCT, EdgeRole.TARGET);
-				processRelation(nv, cyNet, myView, createdIds, relations, centerNotFitContent);
-				*/
 				
 				percentage = percentage + step;
 				

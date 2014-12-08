@@ -24,6 +24,8 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -36,6 +38,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -52,6 +55,13 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntProperty;
+import com.hp.hpl.jena.ontology.OntResource;
+import com.hp.hpl.jena.util.iterator.ExtendedIterator;
+import com.hp.hpl.jena.vocabulary.XSD;
+
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 import ai.vital.cytoscape.app.internal.dnd.ListElementWrapper;
@@ -61,6 +71,8 @@ import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.domain.ontology.VitalOntology;
+import ai.vital.vitalservice.exception.VitalServiceException;
+import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalPropertyConstraint;
@@ -69,9 +81,11 @@ import ai.vital.vitalservice.query.VitalQueryContainer;
 import ai.vital.vitalservice.query.VitalQueryContainer.Type;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
+import ai.vital.vitalsigns.RDF2Groovy;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class SearchTab extends JPanel implements ListSelectionListener,
 		ItemListener {
@@ -117,6 +131,8 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	private SegmentsPanel segmentsPanel = new SegmentsPanel();
 	
+	private JComboBox<PropertyItem> propertiesBox;
+	
 	@SuppressWarnings("unchecked")
 	public SearchTab() {
 		super();
@@ -157,6 +173,12 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		nameSpaceCombo.addKeyListener(keyListener);
 		
 		
+		
+		propertiesBox = new JComboBox<PropertyItem>();
+		
+		initProprtiesBox();
+		
+		
 		setLayout(new BorderLayout());
 
 		JPanel northPanel = createPanelNorth();
@@ -168,6 +190,83 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 		updateImportButton();
 
+	}
+
+	private void initProprtiesBox() {
+
+		OntModel ontModel = VitalSigns.get().getModel();
+		
+		OntClass nodeClass = ontModel.getOntClass(VitalCoreOntology.VITAL_Node.getURI());
+		
+		List<OntClass> roots = Arrays.asList(nodeClass);
+		
+		//collect all properties 
+		Set<String> pURIs = new HashSet<String>();
+		
+		List<PropertyItem> pItems = new ArrayList<PropertyItem>();
+		
+		while(roots.size() > 0) {
+			
+			List<OntClass> newRoots = new ArrayList<OntClass>();
+			
+			for(OntClass c : roots) {
+				
+				for( ExtendedIterator<OntProperty> dps = c.listDeclaredProperties(true); dps.hasNext(); ) {
+
+					OntProperty property = dps.next();
+			
+					OntResource domain = property.getDomain();
+					
+					if(domain == null) continue;
+					
+					if(!property.isURIResource()) continue;
+					
+					OntResource range = property.getRange();
+					
+					if(range != null && range.isURIResource() && range.getURI().equals(XSD.xstring.getURI())) {
+						if(pURIs.add(property.getURI())) {
+							String propertyName = RDF2Groovy.getGPropertyName(property.getURI());
+							pItems.add(new PropertyItem(propertyName, property.getURI()));
+						}
+					}
+					
+				}
+				
+				for( ExtendedIterator<OntClass> subclasses= c.listSubClasses(true); subclasses.hasNext(); ) {
+					newRoots.add(subclasses.next());
+				}
+				
+			}
+			
+			roots = newRoots;
+			
+		}
+
+		Collections.sort(pItems, new java.util.Comparator<PropertyItem>(){
+
+			@Override
+			public int compare(PropertyItem arg0, PropertyItem arg1) {
+				int c = arg0.propertyName.compareToIgnoreCase(arg1.propertyName);
+				if(c != 0) return c;
+				return arg0.propertyURI.compareToIgnoreCase(arg1.propertyURI);
+			}});
+		
+		
+		PropertyItem nameItem = null;
+		
+		for(PropertyItem p : pItems) {
+			propertiesBox.addItem(p);
+			if((VitalOntology.NS + "hasName").equals(p.propertyURI)) {
+				nameItem = p;
+			}
+		}
+		
+		if(nameItem != null) {
+			propertiesBox.setSelectedItem(nameItem);
+		}
+		
+		//list subclasses
+		
 	}
 
 	private JPanel createPanelNorth() {
@@ -287,6 +386,19 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 //		northPanel.add(categoryTypePanel);
 
+		
+		
+		JPanel propertyPanel = new JPanel();
+		propertyPanel.setLayout(new BoxLayout(propertyPanel, BoxLayout.X_AXIS));
+		propertyPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		propertyPanel.add(new JLabel("Property:"));
+		propertyPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		propertiesBox.setPreferredSize(new Dimension(120, 30));
+		propertyPanel.add(propertiesBox);
+		
+		northPanel.add(propertyPanel);
+		
+		
 		JPanel namespacePanel = new JPanel();
 		namespacePanel.setLayout(new BoxLayout(namespacePanel, BoxLayout.X_AXIS));
 		namespacePanel.add(Box.createRigidArea(new Dimension(hspace, 0)));
@@ -381,7 +493,9 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				
 				String[] split = searchString.split("\\s+");
 				
-
+				
+				String propertyURI = ((PropertyItem)propertiesBox.getSelectedItem()).propertyURI;
+				
 				//main containers
 				List<VitalQueryContainer> keywordsContainers = new ArrayList<VitalQueryContainer>();
 				
@@ -428,7 +542,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 						
 //						sq.getComponents().add(qc);
 						
-						sq.getComponents().add(new VitalPropertyConstraint(VitalOntology.NS + "hasName", q, Comparator.EQ_CASE_INSENSITIVE, false));
+						sq.getComponents().add(new VitalPropertyConstraint(propertyURI, q, Comparator.EQ_CASE_INSENSITIVE, false));
 						
 //					}
 					
@@ -442,7 +556,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 						
 						if(!chunk.trim().equals("")) {
 							
-							keywordsC.getComponents().add(new VitalPropertyConstraint(VitalOntology.NS + "hasName", chunk, Comparator.CONTAINS_CASE_INSENSITIVE, false));
+							keywordsC.getComponents().add(new VitalPropertyConstraint(propertyURI, chunk, Comparator.CONTAINS_CASE_INSENSITIVE, false));
 							
 						}
 						
@@ -694,7 +808,54 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 	public SegmentsPanel getSegmentsPanel() {
 		return segmentsPanel;
 	}
-
+	
 	
 
+	public static void main(String[] args) throws VitalServiceException, VitalServiceUnimplementedException {
+		
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		Application.initForTests();
+
+		SearchTab panel = new SearchTab();
+
+		panel.getSegmentsPanel().setSegmentsList(Application.get().getServiceSegments());
+		
+		panel.setSize(400, 400);
+
+		frame.setMinimumSize(new Dimension(800, 600));
+		frame.setSize(800, 600);
+		frame.getContentPane().add(panel);
+		frame.pack();
+		frame.setVisible(true);
+		
+
+		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
+		
+		System.out.println(rl.toString());
+		
+	}
+
+	public static class PropertyItem {
+		
+		private String propertyName;
+		
+		private String propertyURI;
+		
+		public PropertyItem(String propertyName, String propertyURI) {
+			super();
+			this.propertyName = propertyName;
+			this.propertyURI = propertyURI;
+		}
+
+
+
+		@Override
+		public String toString() {
+			return propertyName + "   [" + propertyURI + "]";
+		}
+		
+	}
+	
 }

@@ -357,6 +357,7 @@ public class Application {
 			
 			//paths list 
 			List<List<PathElement>> vpaths = GraphSetsRegistry.get().getPaths(gClass);
+//			vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, false));
 			
 			if(vpaths.size() < 1) {
 				log.warn("Default taxonomy paths list for class: " + gClass.getCanonicalName() + " is empty - cannot expand the object");
@@ -654,7 +655,12 @@ public class Application {
 			
 			HierarchyNode child = new HierarchyNode();
 			child.URI = u;
-			child.cls = (Class<? extends GraphObject>) Class.forName((String) n.getProperty("name"));
+			
+			String gname = (String) n.getProperty("name");
+			
+			Class<? extends GraphObject> cls = (Class<? extends GraphObject>) VitalSigns.get().getGroovyClass(u);//Class.forName((String) n.getProperty("name"));
+			if(cls == null) throw new Exception("Class not found: " + gname + " uri: " + u);
+			child.cls = cls;
 			
 			parent.children.add(child);
 			

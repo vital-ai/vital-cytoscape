@@ -610,6 +610,12 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				for (int i = 0; i < lastResults.size(); i++) {
 					VITAL_Node entity = lastResults.get(i);
 					ListElementWrapper element = new ListElementWrapper(entity, null, null);
+					
+					String prop = (String) entity.getProperty(((PropertyItem)propertiesBox.getSelectedItem()).propertyName);
+					if(prop != null && !prop.isEmpty()) {
+						element.setSpecialLabel(prop);;
+					}
+					
 					listModel.addElement(element);
 					entities.put(entity.getURI(), entity);
 				}

@@ -699,8 +699,10 @@ public class Utils {
 		createIfNotExists(Attributes.uri, String.class, nodeAttributes);
 		nodeAttributes.set(Attributes.uri, entity.getURI());
 		
-		createIfNotExists(Attributes.canonicalName, String.class, nodeAttributes);
-		nodeAttributes.set(Attributes.canonicalName, PropertyUtils.resolveName(entity));
+//		createIfNotExists(Attributes.canonicalName, String.class, nodeAttributes);
+		String resolvedName = PropertyUtils.resolveName(entity);
+//		nodeAttributes.set(Attributes.canonicalName, resolvedName);
+		nodeAttributes.set(Attributes.name, resolvedName);
 //		nodeAttributes.setAttribute(id, Attributes.category, entity.getCategoryID());
 //		nodeAttributes.setAttribute(id, Attributes.scope, entity.getScopeType().toString());
 //		nodeAttributes.setAttribute(id, Attributes.segment, entity.getSegmentName());

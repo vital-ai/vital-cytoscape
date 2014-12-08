@@ -12,7 +12,7 @@ public class Attributes {
 	
 //	public final static String category = "category";
 	
-	public final static String canonicalName = "canonicalName";
+//	public final static String canonicalName = "canonicalName";
 	
 	public final static String scope = "scope";
 	
@@ -48,7 +48,9 @@ public class Attributes {
 
 	public static String type = "type";
 	
-	public static String score = "score"; 
+	public static String score = "score";
+
+	public static String name = "name"; 
 	
 	public final static String relationsCount = "relationsCount"; 
 	
@@ -67,7 +69,7 @@ public class Attributes {
 		
 		attribs.add(uri);
 //		attribs.add(category);
-		attribs.add(canonicalName);
+//		attribs.add(canonicalName);
 		
 		return attribs;
 		
@@ -81,7 +83,7 @@ public class Attributes {
 	public static LinkedHashMap<String,Class<?>> getNodeAttributesMap() {
 		LinkedHashMap<String, Class<?>> map= new LinkedHashMap<String, Class<?>>();
 		map.put(uri, String.class);
-		map.put(canonicalName, String.class);
+//		map.put(canonicalName, String.class);
 //		map.put(category , String.class);
 		map.put(scope,String.class);
 		map.put(segment,String.class);
@@ -107,7 +109,7 @@ public class Attributes {
 	public static LinkedHashMap<String,Class<?>> getEdgeAttributesMap() {
 		LinkedHashMap<String, Class<?>> map= new LinkedHashMap<String, Class<?>>();
 		map.put(uri, String.class);
-		map.put(canonicalName, String.class);
+//		map.put(canonicalName, String.class);
 //		map.put(edge_type,String.class);
 		map.put(edgeTypeURI, String.class);
 //		map.put(category , String.class);

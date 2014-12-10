@@ -102,7 +102,7 @@ public class Application {
 		VitalSigns vs = VitalSigns.get();
 		log.info("$VITAL_HOME: " + vitalHome);
 //		o("Singleton obtained, registering vital domain ontology...");
-		File domainJarsDir = new File(vitalHome, "domain-jar");
+		File domainJarsDir = new File(vitalHome, "domain-groovy-jar");
 		log.info("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
 		//vs.registerOntology(new VitalOntology());
 		

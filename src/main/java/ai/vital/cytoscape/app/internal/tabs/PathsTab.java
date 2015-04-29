@@ -22,6 +22,7 @@ import ai.vital.domain.ontology.VitalOntology;
 import ai.vital.endpoint.EndpointType;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
+import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
@@ -164,7 +165,9 @@ public class PathsTab extends JPanel {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests();
+		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
+		
+		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		PathsTab panel = new PathsTab();
 
@@ -179,9 +182,8 @@ public class PathsTab extends JPanel {
 		frame.setVisible(true);
 		
 
-		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
-		
-		System.out.println(rl.toString());
+//		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
+//		System.out.println(rl.toString());
 		
 	}
 

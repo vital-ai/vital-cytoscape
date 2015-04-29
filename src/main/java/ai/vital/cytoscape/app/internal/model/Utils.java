@@ -1,6 +1,7 @@
 package ai.vital.cytoscape.app.internal.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,12 +25,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
+import ai.vital.property.BooleanProperty;
+import ai.vital.property.DateProperty;
+import ai.vital.property.DoubleProperty;
+import ai.vital.property.FloatProperty;
+import ai.vital.property.GeoLocationProperty;
+import ai.vital.property.IProperty;
+import ai.vital.property.IntegerProperty;
+import ai.vital.property.LongProperty;
+import ai.vital.property.MultiValueProperty;
+import ai.vital.property.OtherProperty;
+import ai.vital.property.StringProperty;
+import ai.vital.property.URIProperty;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PropertyInterface;
-import ai.vital.vitalsigns.model.URIPropertyValue;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.rdf.RDFUtils;
 
 public class Utils {
 
@@ -726,13 +738,13 @@ public class Utils {
 		go_cats.put(Attributes.GO_MOLECULAR_FUNCTION, new HashSet<String>());
 		
 		
-		for( Iterator<Entry<String, PropertyInterface>> iterator = entity.getProperties().entrySet().iterator(); iterator.hasNext(); ) {
+		for( Iterator<Entry<String, IProperty>> iterator = entity.getPropertiesMap().entrySet().iterator(); iterator.hasNext(); ) {
 			
-			Entry<String, PropertyInterface> next = iterator.next();
+			Entry<String, IProperty> next = iterator.next();
 			
-			String propName = next.getKey();
+			String propURI = next.getKey();
 			
-			setProperty(nodeAttributes, next.getValue());
+			setProperty(nodeAttributes, propURI, next.getValue());
 		}
 		
 //		if(typeID != null && categoryID != null) {
@@ -834,35 +846,57 @@ public class Utils {
 			propName.equals(MOLECULAR_FUNCTION);
 	}
 
-	private static void setProperty(CyRow attributes, PropertyInterface propertyO) {
+	private static void setProperty(CyRow attributes, String propURI, IProperty propertyO) {
 		
-		if(propertyO.getValue() == null) {
-			log.debug( "Property \"" + propertyO.getShortName() + "\" value is null" );
+		if(propertyO == null) {
+			log.debug( "Property \"" + propertyO + "\" value is null" );
 			return;
 		}
+
+		String n = RDFUtils.getPropertyShortName(propURI);
 		
-		Object property = propertyO.getValue();
+		IProperty property = propertyO.unwrapped();
 		
-		String n = propertyO.getShortName();
-		
-		if(property instanceof Boolean) {
+		if(property instanceof BooleanProperty) {
 			createIfNotExists(n, Boolean.class, attributes);
-			attributes.set(n, (Boolean)property);
-		} else if(property instanceof Date) {
+			attributes.set(n, ((BooleanProperty)property).booleanValue());
+		} else if(property instanceof DateProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, TimeUtils.convertDate((Date)property));
-		} else if(property instanceof Double) {
+			attributes.set(n, TimeUtils.convertDate(((DateProperty)property).getDate()));
+		} else if(property instanceof DoubleProperty) {
 			createIfNotExists(n, Double.class, attributes);
-			attributes.set(n, (Double)property);
-		} else if(property instanceof Integer) {
+			attributes.set(n, ((DoubleProperty)property).doubleValue());
+		} else if(property instanceof FloatProperty) {
+			createIfNotExists(n, Float.class, attributes);
+			attributes.set(n, ((FloatProperty)property).floatValue());
+		} else if(property instanceof GeoLocationProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((GeoLocationProperty)property).toRDFValue());
+		} else if(property instanceof IntegerProperty) {
 			createIfNotExists(n, Integer.class, attributes);
-			attributes.set(n, (Integer)property);
-		} else if(property instanceof String) {
+			attributes.set(n, ((IntegerProperty)property).intValue());
+		} else if(property instanceof LongProperty) {
+			createIfNotExists(n, Long.class, attributes);
+			attributes.set(n, ((LongProperty)property).longValue());
+		} else if(property instanceof MultiValueProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, (String)property);
-		} else if(property instanceof URIPropertyValue) {
+			StringBuilder v = new StringBuilder();
+			MultiValueProperty mvp = (MultiValueProperty) property;
+			Collection rawValue = (Collection) mvp.rawValue();
+			for(Object o : rawValue) {
+				if(v.length() > 0) v.append(", ");
+				v.append(o);
+			}
+			attributes.set(n, v.toString());
+		} else if(property instanceof OtherProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, ((URIPropertyValue)property).getURI());
+			attributes.set(n, ((OtherProperty)property).toRDFString());
+		} else if(property instanceof StringProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((StringProperty)property).toString());
+		} else if(property instanceof URIProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((URIProperty)property).get());
 		} 
 	}
 	

@@ -58,22 +58,25 @@ import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
+import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.domain.ontology.VitalOntology;
+import ai.vital.property.IProperty;
+import ai.vital.property.URIProperty;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
-import ai.vital.vitalservice.query.VitalPropertyConstraint;
-import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
-import ai.vital.vitalservice.query.VitalQueryContainer;
-import ai.vital.vitalservice.query.VitalQueryContainer.Type;
+import ai.vital.vitalservice.query.QueryContainerType;
+import ai.vital.vitalservice.query.VitalGraphCriteriaContainer;
+import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion;
+import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion.Comparator;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
-import ai.vital.vitalsigns.RDF2Groovy;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Node;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
+import ai.vital.vitalsigns.rdf.RDFUtils;
 
 public class SearchTab extends JPanel implements ListSelectionListener,
 		ItemListener {
@@ -184,7 +187,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	private void initProprtiesBox() {
 
-		OntModel ontModel = VitalSigns.get().getModel();
+		OntModel ontModel = VitalSigns.get().getOntologyModel();
 		
 		OntClass nodeClass = ontModel.getOntClass(VitalCoreOntology.VITAL_Node.getURI());
 		
@@ -215,7 +218,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					
 					if(range != null && range.isURIResource() && range.getURI().equals(XSD.xstring.getURI())) {
 						if(pURIs.add(property.getURI())) {
-							String propertyName = RDF2Groovy.getGPropertyName(property.getURI());
+							String propertyName = RDFUtils.getPropertyShortName(property.getURI());
 							pItems.add(new PropertyItem(propertyName, property.getURI()));
 						}
 					}
@@ -470,24 +473,32 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 				
 //				ConsolePanel.log("\nPerforming query...");
+				String searchString = textField.getText().trim();
+				String propertyURI = ((PropertyItem)propertiesBox.getSelectedItem()).propertyURI;
 				
-				VitalSelectQuery sq = new VitalSelectQuery();
+				VitalSelectQuery sq = Queries.searchQuery(segments, searchString, 0, 1000, propertyURI, orRadioButton.isSelected());
+				
+				/*
+				VitalSelectQuery sq = VitalSelectQuery.createInstance();
 //				Type.or, "wordnet", 0, 100
 				sq.setLimit(100);
 				sq.setOffset(0);
 				sq.setProjectionOnly(false);
-				sq.setType(Type.or);
+				sq.setSegments(segments);
+				
+				VitalGraphCriteriaContainer cc = sq.getCriteriaContainer();
+				cc.setType(QueryContainerType.or);
 
 				
-				String searchString = textField.getText();
 				
 				String[] split = searchString.split("\\s+");
 				
 				
-				String propertyURI = ((PropertyItem)propertiesBox.getSelectedItem()).propertyURI;
+				
+//				VitalSigns.get().getProperty(URIProperty)
 				
 				//main containers
-				List<VitalQueryContainer> keywordsContainers = new ArrayList<VitalQueryContainer>();
+				List<VitalGraphCriteriaContainer> keywordsContainers = new ArrayList<VitalGraphCriteriaContainer>();
 				
 //				for(Class cls : types) {
 					
@@ -501,9 +512,10 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					
 //					qc.getComponents().add(new VitalTypeConstraint(cls));
 					
-					VitalQueryContainer keywords = new VitalQueryContainer();
+					VitalGraphCriteriaContainer keywords = new VitalGraphCriteriaContainer();
 //					orRadioButton.isSelected() ? Type.or : Type.and
-					keywords.setType(orRadioButton.isSelected() ? Type.or : Type.and);
+					
+					keywords.setType(orRadioButton.isSelected() ? QueryContainerType.or : QueryContainerType.and);
 					
 //					qc.getComponents().add(keywords);
 					
@@ -511,7 +523,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					
 //					sq.getComponents().add(qc);
 					
-					sq.getComponents().add(keywords);
+					cc.add(keywords);
 					
 //				}
 				
@@ -532,13 +544,19 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 						
 //						sq.getComponents().add(qc);
 						
-						sq.getComponents().add(new VitalPropertyConstraint(propertyURI, q, Comparator.EQ_CASE_INSENSITIVE, false));
+						VitalGraphQueryPropertyCriterion c = new VitalGraphQueryPropertyCriterion(propertyURI);
+						c.setComparator(Comparator.EQ_CASE_INSENSITIVE);
+						c.setValue(q);
+						
+						cc.add(c);
+						
+//						sq.getComponents().add(new VitalPropertyConstraint(propertyURI, q, Comparator.EQ_CASE_INSENSITIVE, false));
 						
 //					}
 					
 				}
 
-				for(VitalQueryContainer keywordsC : keywordsContainers) {
+				for(VitalGraphCriteriaContainer keywordsC : keywordsContainers) {
 					
 					for(int i = 0 ; i < split.length; i ++) {
 						
@@ -546,20 +564,24 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 						
 						if(!chunk.trim().equals("")) {
 							
-							keywordsC.getComponents().add(new VitalPropertyConstraint(propertyURI, chunk, Comparator.CONTAINS_CASE_INSENSITIVE, false));
+							VitalGraphQueryPropertyCriterion c = new VitalGraphQueryPropertyCriterion(propertyURI);
+							c.setComparator(Comparator.CONTAINS_CASE_INSENSITIVE);
+							c.setValue(chunk);
+							keywordsC.add(c);
+//							keywordsC.getComponents().add(new VitalPropertyConstraint(propertyURI, chunk, Comparator.CONTAINS_CASE_INSENSITIVE, false));
 							
 						}
 						
 					}
 					
 				}
-
+				*/
 				
 				Set<String> uris = new HashSet<String>();
 				
-				for(String ns : VitalSigns.get().getNs2Segment().keySet()) {
+				for(String ns : VitalSigns.get().getOntologyURI2Segment().keySet()) {
 					
-					ResultList rs = VitalSigns.get().doSelectQuery(ns, sq);
+					ResultList rs = VitalSigns.get().query(sq, Arrays.asList(ns));
 					
 					for(ResultElement r : rs.getResults()) {
 						GraphObject g = r.getGraphObject();
@@ -611,9 +633,9 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 					VITAL_Node entity = lastResults.get(i);
 					ListElementWrapper element = new ListElementWrapper(entity, null, null);
 					
-					String prop = (String) entity.getProperty(((PropertyItem)propertiesBox.getSelectedItem()).propertyName);
-					if(prop != null && !prop.isEmpty()) {
-						element.setSpecialLabel(prop);;
+					IProperty prop = (IProperty) entity.getProperty(((PropertyItem)propertiesBox.getSelectedItem()).propertyName);
+					if(prop != null) {
+						element.setSpecialLabel(prop.rawValue().toString());
 					}
 					
 					listModel.addElement(element);
@@ -812,7 +834,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests();
+		Application.initForTests(null);
 
 		SearchTab panel = new SearchTab();
 
@@ -827,7 +849,10 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		frame.setVisible(true);
 		
 
-		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
+//		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateDivision/1417795451415_913912318", "http://vital.ai/ontology/bloomberg-compliance#CorporateDivision");
+//		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateOrganization/1417795451226_913912317", "http://vital.ai/ontology/bloomberg-compliance#CorporateOrganization");
+		
+		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateStaffMember/1417795624138_913917224", "http://vital.ai/ontology/bloomberg-compliance#CorporateStaffMember");
 		
 		System.out.println(rl.toString());
 		

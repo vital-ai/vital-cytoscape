@@ -13,46 +13,57 @@
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.0.13-SNAPSHOT.jar" />
+	<property name="dist.jar" value="${basedir}/vital-plugin-0.2.250.jar" />
 	
 	<target name="install-mvn-dependencies">
 		
 		<exec command="${maven.command}">
 			<arg value="install:install-file" />
-			<arg value="-DgroupId=ai.vital" />
-			<arg value="-DartifactId=VitalSigns" />
-			<arg value="-Dversion=0.1.0" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/command/VitalSigns-0.1.0.jar" />
+			<arg value="-DgroupId=vital-ai" />
+			<arg value="-DartifactId=vitalsigns" />
+			<arg value="-Dversion=0.2.250" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/command/VitalSigns-0.2.250.jar" />
 			<arg value="-Dpackaging=jar" />
 			<arg value="-DgeneratePom=true" />
 		</exec>
 				
 		<exec command="${maven.command}">
 			<arg value="install:install-file" />
-			<arg value="-DgroupId=ai.vital" />
-			<arg value="-DartifactId=VitalDomain" />
-			<arg value="-Dversion=0.1.0" />
-			<arg value="-Dfile=${VITAL_HOME}/vital-domain/VitalDomain-groovy-0.1.0.jar" />
+			<arg value="-DgroupId=vital-ai" />
+			<arg value="-DartifactId=vital-domain" />
+			<arg value="-Dversion=0.2.250" />
+			<arg value="-Dfile=${VITAL_HOME}/vital-domain/VitalDomain-groovy-0.2.250.jar" />
 			<arg value="-Dpackaging=jar" />
 			<arg value="-DgeneratePom=true" />
 		</exec>
 				
 		<exec command="${maven.command}">
 			<arg value="install:install-file" />
-			<arg value="-DgroupId=ai.vital" />
-			<arg value="-DartifactId=VitalService" />
-			<arg value="-Dversion=0.1.0" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalservice/VitalService-0.1.0.jar" />
+			<arg value="-DgroupId=vital-ai" />
+			<arg value="-DartifactId=vitalservice" />
+			<arg value="-Dversion=0.2.250" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalservice/VitalService-0.2.250.jar" />
 			<arg value="-Dpackaging=jar" />
 			<arg value="-DgeneratePom=true" />
 		</exec>
 	
 		<exec command="${maven.command}">
 			<arg value="install:install-file" />
-			<arg value="-DgroupId=ai.vital" />
-			<arg value="-DartifactId=VitalLucene" />
-			<arg value="-Dversion=0.1.0" />
-			<arg value="-Dfile=${VITAL_HOME}/vital-lucene/vital-lucene-0.1.0.jar" />
+			<arg value="-DgroupId=vital-ai" />
+			<arg value="-DartifactId=vital-lucene" />
+			<arg value="-Dversion=0.2.250" />
+			<arg value="-Dfile=${VITAL_HOME}/vital-lucene/vital-lucene-0.2.250.jar" />
+			<arg value="-Dpackaging=jar" />
+			<arg value="-DgeneratePom=true" />
+		</exec>
+		
+		
+		<exec command="${maven.command}">
+			<arg value="install:install-file" />
+			<arg value="-DgroupId=vital-ai" />
+			<arg value="-DartifactId=owl2vcs-vital" />
+			<arg value="-Dversion=0.0.1" />
+			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/lib/owl2vcs-vital.jar" />
 			<arg value="-Dpackaging=jar" />
 			<arg value="-DgeneratePom=true" />
 		</exec>
@@ -75,8 +86,9 @@
 			
 			<zipgroupfileset dir="${VITAL_HOME}">
 				<include name="vitalsigns/command/VitalSigns-*.jar" />
-				<include name="vitalsigns/lib/groovy-2.3.6/*.jar" />
+				<include name="vitalsigns/lib/groovy-*/*.jar" />
 				<include name="vitalsigns/lib/commons-codec-*.jar" />
+				<include name="vitalsigns/lib/commons-httpclient-*.jar" />
 				<include name="vitalsigns/lib/commons-io-*.jar" />
 				<include name="vitalsigns/lib/commons-lang3-*.jar" />
 				<include name="vitalsigns/lib/commons-logging-*.jar" />
@@ -90,6 +102,7 @@
 				<include name="vitalsigns/lib/slf4j-*.jar" />
 				<include name="vitalsigns/lib/trove-*.jar" />
 				<include name="vitalsigns/lib/xercesImpl-*.jar" />
+				<!--<include name="vitalsigns/lib/xml-apis-*.jar" />-->
 				<include name="vital-domain/VitalDomain-groovy-*.jar" />
 				<!-- <include name="vital-dynamodb/**/*.jar" /> -->
 				<include name="vital-lucene/vital-lucene-*.jar" />
@@ -97,10 +110,6 @@
 				<include name="vitalservice/VitalService-*.jar" />
 				
 			</zipgroupfileset>
-			
-			<!-- <zipfileset src="D:/lib/groovy/groovy-2.3.6/embeddable/groovy-all-2.3.6-indy.jar" /> -->
-			
-			<!-- <zipfileset src="D:/lib/groovy/groovy-2.2.2/embeddable/groovy-all-2.2.2-indy.jar" /> -->
 			
 		</jar>
 		

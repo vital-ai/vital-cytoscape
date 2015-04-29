@@ -56,11 +56,12 @@ import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.DatascriptInfo;
+import ai.vital.property.IProperty;
 import ai.vital.vitalservice.VitalStatus;
+import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PropertyInterface;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
 
@@ -102,7 +103,8 @@ public class DatascriptsTab extends JPanel {
 		//scriptsList.setB
 		scriptsList = new JList<DatascriptsTab.DatascriptItem>(model);
 		scriptsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		scriptsList.setPreferredSize(new Dimension(0, 150));
+//		scriptsList.setPreferredSize(new Dimension(0, 150));
+		scriptsList.setVisibleRowCount(10);
 		
 		scriptsList.addListSelectionListener(new ListSelectionListener() {
 			
@@ -329,7 +331,7 @@ public class DatascriptsTab extends JPanel {
 					System.out.println(title);
 				}
 
-				final ResultList results = Application.get().executeDatascript((String)selectedScript.script.getProperty("scriptPath"), runParamsF);
+				final ResultList results = Application.get().executeDatascript(selectedScript.script.getProperty("scriptPath").toString(), runParamsF);
 				
 				if(taskMonitor != null) {
 					taskMonitor.setProgress(1D);
@@ -407,7 +409,7 @@ public class DatascriptsTab extends JPanel {
 		@Override
 		public String toString() {
 			String n = null;//(String) script.getProperty("name");
-			String p = (String) script.getProperty("scriptPath");
+			String p = script.getProperty("scriptPath").toString();
 			if(p.startsWith("commons")) {
 				n += " (common)";
 			}
@@ -428,7 +430,9 @@ public class DatascriptsTab extends JPanel {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests();
+		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
+		
+		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		DatascriptsTab panel = new DatascriptsTab();
 		
@@ -503,11 +507,10 @@ public class DatascriptsTab extends JPanel {
 			for(DatascriptInfo info : infos) {
 				i++;
 				s += ("<br/>" + i +":");
-				for(Object e : info.getProperties().entrySet()) {
-					Entry entry = (Entry) e;
-					String key= (String) entry.getKey();
-					PropertyInterface val = (PropertyInterface) entry.getValue();
-					s+= ( "   " + key + "=" + val.getValue());
+				for(Entry<String, IProperty> entry : info.getPropertiesMap().entrySet()) {
+					String key = entry.getKey();
+					IProperty val = entry.getValue().unwrapped();
+					s+= ( "   " + key + "=" + val.toString());
 				}
 				
 			}

@@ -137,7 +137,7 @@ public class SegmentsPanel extends JPanel {
 		}
 
 		public String toString() {
-			return segment.getId();
+			return segment.getID();
 		}
 
 		public VitalSegment getSegment() {

@@ -5,12 +5,15 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -23,12 +26,16 @@ import javax.swing.border.TitledBorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.typesafe.config.Config;
+
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
 import ai.vital.endpoint.EndpointType;
+import ai.vital.vitalservice.VitalService;
+import ai.vital.vitalservice.factory.VitalServiceFactory;
 
 
-public class ServicePanel extends JPanel implements LoginListener {
+public class ServicePanel extends JPanel implements LoginListener, ActionListener {
 
 	private static final long serialVersionUID = 1L;
 
@@ -36,6 +43,8 @@ public class ServicePanel extends JPanel implements LoginListener {
 	
 	private JLabel login = new JLabel("login:");
 	private JLabel passwd = new JLabel("passwd:");
+	
+	private JComboBox<String> serviceProfiles = new JComboBox<String>();
 	
 	private JTextField loginBox = new JTextField();
 	
@@ -63,8 +72,11 @@ public class ServicePanel extends JPanel implements LoginListener {
 	private JButton disconnectButton = new JButton("Disconnect");
 	
 //	private JTextField URLField = new JTextField();
-	private JLabel endpointLabel = new JLabel("endpoint:");
+	private JLabel endpointLabel = new JLabel("type:");
 	private JLabel endpointTypeL = new JLabel();
+	
+	private JLabel endpointURLLabel = new JLabel(" ");
+	private JLabel endpointURLValue = new JLabel(" ");
 	
 //	private JPanel notLoggedInPanel = new JPanel();
 //	private JPanel loggedInPanel = new JPanel();
@@ -73,7 +85,11 @@ public class ServicePanel extends JPanel implements LoginListener {
 	private JLabel URLLabel = new JLabel("URL:");
 	private JTextField URLField = new JTextField();
 	
-	private EndpointType endpointType; 
+	private EndpointType endpointType;
+
+	private Config servicesConfig;
+
+	private String selectedProfile; 
 	
 	public ServicePanel() {
 		super();
@@ -82,6 +98,34 @@ public class ServicePanel extends JPanel implements LoginListener {
 		this.setBorder(new TitledBorder("Service"));
 
 		
+		List<String> profiles = VitalServiceFactory.getAvailableProfiles();
+		Collections.sort(profiles);
+		
+		for(String profile : profiles ) {
+			serviceProfiles.addItem(profile);
+		}
+		
+		int ind = profiles.indexOf("default");
+		if(ind >= 0) {
+			serviceProfiles.setSelectedIndex(ind);
+		}
+		
+		
+		
+		servicesConfig = VitalServiceFactory.getConfig();
+		
+		
+		JPanel serviceProfilePanel = new JPanel();
+		serviceProfilePanel.setLayout(new BorderLayout(5,2));
+		serviceProfilePanel.setBorder(new EmptyBorder(2,2,2,2));
+		
+		serviceProfilePanel.add(new JLabel("profile:"), BorderLayout.WEST);
+		
+		serviceProfilePanel.add(serviceProfiles);
+		
+		serviceProfiles.addActionListener(this);
+		
+		add(serviceProfilePanel);
 		
 		JPanel endpointTypePanel = new JPanel();
 		endpointTypePanel.setLayout(new BorderLayout(5,2));
@@ -92,19 +136,30 @@ public class ServicePanel extends JPanel implements LoginListener {
 		
 		Dimension labelSize = new Dimension(60,25);
 		
-		endpointLabel.setPreferredSize(labelSize);
+//		endpointLabel.setPreferredSize(labelSize);
 		
 		endpointTypePanel.add(endpointLabel, BorderLayout.WEST);
 		
-		endpointType = Application.get().getEndpointType();
+//		endpointType = Application.get().getEndpointType();
 		
 		log.info("Endpoint type: {}", endpointType);
 
 		
-		endpointTypeL.setText("" + endpointType.getName());
+		endpointTypeL.setText(endpointType != null ? ( "" + endpointType.getName() ) : "");
 		endpointTypePanel.add(endpointTypeL, BorderLayout.CENTER);
 		
 		add(endpointTypePanel);
+		
+		
+		
+		JPanel endpointURLPanel = new JPanel();
+		endpointURLPanel.setLayout(new BorderLayout(5,2));
+		endpointURLPanel.setBorder(new EmptyBorder(2,2,2,2));
+		
+		endpointURLPanel.add(endpointURLLabel, BorderLayout.WEST);
+		endpointURLPanel.add(endpointURLValue, BorderLayout.CENTER);
+		
+		add(endpointURLPanel);
 
 
 		if(endpointType == EndpointType.VITALPRIME) {
@@ -182,6 +237,7 @@ public class ServicePanel extends JPanel implements LoginListener {
 			public void actionPerformed(ActionEvent e) {
 				
 				connectButton.setEnabled(false);
+				serviceProfiles.setEnabled(false);
 				message.setText("logging in ...");
 				final String url = URLField.getText();
 				if(endpointType == EndpointType.VITALPRIME) {
@@ -196,13 +252,24 @@ public class ServicePanel extends JPanel implements LoginListener {
 					public void run() {
 						
 						try {
-							Application.get().login(loginBox.getText(), String.valueOf(passwdBox.getPassword()),url);
+							
+							if(selectedProfile == null) throw new RuntimeException("No profile selected!");
+							
+							VitalServiceFactory.closeVitalService();
+							
+							VitalServiceFactory.setServiceProfile(selectedProfile);
+							
+							VitalService service = VitalServiceFactory.getVitalService();
+							
+							Application.get().login(service);
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							log.error(e.getLocalizedMessage());
 							message.setText("");
 							JOptionPane.showMessageDialog(null, "Connection error: " + e.getLocalizedMessage(), "Connection error", JOptionPane.ERROR_MESSAGE);
 							connectButton.setEnabled(true);
+							
+							serviceProfiles.setEnabled(true);
 							
 						}
 						
@@ -239,16 +306,21 @@ public class ServicePanel extends JPanel implements LoginListener {
 		onLogout();
 		message.setText("");
 		
+		try {
 		Application.get().addLoginListener(this);
-		
-		
-		if(endpointType != EndpointType.VITALPRIME) {
-			
-			//autologin
-			connectButton.doClick();
-			
+		} catch(Exception e){
+			e.printStackTrace();
 		}
 		
+		
+//		if(endpointType != EndpointType.VITALPRIME) {
+//			
+//			//autologin
+//			connectButton.doClick();
+//			
+//		}
+		
+		this.actionPerformed(null);
 		
 	}
 
@@ -264,6 +336,8 @@ public class ServicePanel extends JPanel implements LoginListener {
 		add(disconnectButtonPanelRow);
 		
 		URLField.setEnabled(false);
+		
+		serviceProfiles.setEnabled(false);
 		
 	}
 
@@ -287,12 +361,50 @@ public class ServicePanel extends JPanel implements LoginListener {
 		
 		message.setText("Logged out");
 		
+		serviceProfiles.setEnabled(true);
+		
 		
 		
 	}
 
 	public void setConnectionURL(String initialURL) {
 		URLField.setText(initialURL);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+
+		try {
+			
+			this.selectedProfile = (String) serviceProfiles.getSelectedItem();
+			
+			Config profileConfig = servicesConfig.getConfig("profile." + selectedProfile);
+			
+			this.endpointType = EndpointType.fromString(profileConfig.getString("type"));
+			
+			
+			endpointTypeL.setText( "" + this.endpointType.getName()) ;
+			
+			if(endpointType == EndpointType.VITALPRIME) {
+				
+				endpointURLLabel.setText("URL:");
+				endpointURLValue.setText(profileConfig.getString("VitalPrime.endpointURL"));
+				
+			} else {
+				
+				endpointURLLabel.setText(" ");
+				endpointURLValue.setText(" ");
+			}
+			
+		} catch(Exception e) {
+			
+			JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
+			
+		}
+		
+		
+		
+		
 	}
 
 }

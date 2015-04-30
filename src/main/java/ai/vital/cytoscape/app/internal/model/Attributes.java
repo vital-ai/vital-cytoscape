@@ -34,7 +34,11 @@ public class Attributes {
 //	
 //	public final static String avgSourceNormConfidence = "avgSourceNormConfidence"; 
 	
-	public final static String creationDate = "creationDate";
+	public final static String timestamp = "timestamp";
+	
+	public final static String edgeSourceURI = "edgeSourceURI";
+	
+	public final static String edgeDestinationURI = "edgeDestinationURI";
 	
 	public final static String modificationDate = "modificationDate";
 
@@ -89,7 +93,7 @@ public class Attributes {
 		map.put(segment,String.class);
 //		map.put(numInteractionEdges,Integer.class);
 //		map.put(numSubsumptionEdges,Integer.class);
-		map.put(creationDate,String.class);
+		map.put(timestamp,String.class);
 		map.put(modificationDate,String.class);
 		map.put(marked,Boolean.class);
 		map.put(nodeTypeURI, String.class);
@@ -117,7 +121,7 @@ public class Attributes {
 		map.put(segment,String.class);
 //		map.put(numInstances,Integer.class);
 //		map.put(numReferences,Integer.class);
-		map.put(creationDate,String.class);
+		map.put(timestamp,String.class);
 		map.put(modificationDate,String.class);
 //		map.put(marked,Boolean.class);
 		return map;

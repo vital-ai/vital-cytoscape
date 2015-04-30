@@ -71,7 +71,7 @@ class QueriesTest extends TestCase {
 			}
 		}
 		
-		VitalPathQuery q = Queries.connectionsQuery([VitalSegment.withId("wordnet")], 'http://vital.ai/vital/vital/NounSynsetNode/1415978158890_707822408', fC, rC)
+		VitalPathQuery q = Queries.connectionsQuery([VitalSegment.withId("wordnet")], 'http://vital.ai/vital/vital/NounSynsetNode/1415978158890_707822408', 1, fC, rC)
 		
 		ResultList rl = service.query(q);
 		

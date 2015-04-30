@@ -64,6 +64,7 @@ import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class DatascriptsTab extends JPanel {
 
@@ -481,7 +482,7 @@ public class DatascriptsTab extends JPanel {
 			add(bottomPanelW, BorderLayout.SOUTH);
 			
 			if(rl.getStatus().getStatus() != VitalStatus.Status.ok) {
-				northPanel.add(new JLabel("<html><span style=\"color: red;\">ERROR: " + rl.getStatus().getMessage() + "</span></html>"));
+				northPanel.add(new JLabel("<html><span style=\"color: #CC3300;\">ERROR: " + rl.getStatus().getMessage() + "</span></html>"));
 				return;
 			}
 			
@@ -508,7 +509,13 @@ public class DatascriptsTab extends JPanel {
 				i++;
 				s += ("<br/>" + i +":");
 				for(Entry<String, IProperty> entry : info.getPropertiesMap().entrySet()) {
+					
 					String key = entry.getKey();
+					if(VitalCoreOntology.URIProp.getURI().equals(key)
+							|| VitalCoreOntology.types.getURI().equals(key)
+							|| VitalCoreOntology.vitaltype.getURI().equals(key)) {
+						continue;
+					}
 					IProperty val = entry.getValue().unwrapped();
 					s+= ( "   " + key + "=" + val.toString());
 				}

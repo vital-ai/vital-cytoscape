@@ -66,7 +66,7 @@ class Queries {
 		
 	}
 	
-	public static VitalPathQuery connectionsQuery(List<VitalSegment> segments, String inputURI, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes) {
+	public static VitalPathQuery connectionsQuery(List<VitalSegment> segments, String inputURI, Integer depth, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes) {
 		
 		VitalPathQuery pathQuery = builder.query {
 		
@@ -74,7 +74,7 @@ class Queries {
 				
 				value segments: segments
 				
-				value maxdepth: 1
+				value maxdepth: depth
 				
 				value rootURIs: [URIProperty.withString(inputURI)]
 

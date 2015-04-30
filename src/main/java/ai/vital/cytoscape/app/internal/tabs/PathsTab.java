@@ -33,7 +33,9 @@ public class PathsTab extends JPanel {
 
 	private SegmentsPanel segmentsPanel;
 	
-	private JComboBox<ExpansionDirection> directionBox; 
+	private JComboBox<ExpansionDirection> directionBox;
+	
+	private JComboBox<Integer> depthBox;
 	
 	public PathsTab() {
 		
@@ -65,6 +67,22 @@ public class PathsTab extends JPanel {
 		
 		northPanel.add(Box.createRigidArea(new Dimension(1, 10)));
 
+		
+		
+		depthBox = new JComboBox<Integer>();
+		depthBox.addItem(1);
+		depthBox.addItem(2);
+		
+		JPanel depthPanel = new JPanel();
+		depthPanel.setLayout(new BoxLayout(depthPanel, BoxLayout.X_AXIS));
+		depthPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		depthPanel.add(new JLabel("Expansion Depth:"));
+		depthPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		depthBox.setPreferredSize(new Dimension(90, 30));
+		depthPanel.add(depthBox);
+		northPanel.add(depthPanel);
+		
+		northPanel.add(Box.createRigidArea(new Dimension(1, 10)));
 		
 		
 		//filters available only in prime endpoint
@@ -195,5 +213,9 @@ public class PathsTab extends JPanel {
 
 	public ExpansionDirection getExpansionDirection() {
 		return (ExpansionDirection) directionBox.getSelectedItem();
+	}
+	
+	public Integer getDepth() {
+		return (Integer) depthBox.getSelectedItem();
 	}
 }

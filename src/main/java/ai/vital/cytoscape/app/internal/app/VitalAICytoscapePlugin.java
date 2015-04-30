@@ -547,4 +547,9 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 		if(singleton == null || singleton.pathsTab == null) return null;
 		return singleton.pathsTab.getExpansionDirection();
 	}
+	
+	public static Integer getDepth() {
+		if(singleton == null || singleton.pathsTab == null) return 1;
+		return singleton.pathsTab.getDepth();
+	}
 }

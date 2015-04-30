@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +106,23 @@ public class Application {
 		
 		String vitalHome = System.getenv("VITAL_HOME");
 		log.info("Checking vital singleton...");
-		VitalSigns vs = VitalSigns.get();
+		VitalSigns vs = null;
+		try {
+			
+			if(vitalHome == null || vitalHome.isEmpty()) {
+				throw new Exception("VITAL_HOME environment variable not set");
+			}
+		
+			File licenseFile = new File(vitalHome, "vital-license/vital-license.lic");
+			if(!licenseFile.exists()) throw new Exception("Vital license file not found, path: " + licenseFile.getAbsolutePath());
+			
+			vs = VitalSigns.get();
+			
+		} catch(Throwable e) {
+			JOptionPane.showMessageDialog(null, e.getMessage(), "Vital AI initialization error", JOptionPane.ERROR_MESSAGE);
+			throw new RuntimeException(e);
+		}
+		
 		log.info("$VITAL_HOME: " + vitalHome);
 //		o("Singleton obtained, registering vital domain ontology...");
 		File domainJarsDir = new File(vitalHome, "domain-groovy-jar");
@@ -310,6 +328,9 @@ public class Application {
 		
 		if(direction == null) direction = ExpansionDirection.Outgoing;
 		
+		Integer depth = VitalAICytoscapePlugin.getDepth();
+		if(depth == null) depth = 1;
+		
 		ResultList rs = new ResultList();
 		List<ResultElement> li = new ArrayList<ResultElement>();
 		rs.setResults(li);
@@ -359,7 +380,7 @@ public class Application {
 		} catch (Exception e1) {
 		}
 		
-		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, fClasses, rClasses);
+		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
 		
 		for(Entry<String, LuceneSegment> en : VitalSigns.get().getOntologyURI2Segment().entrySet()) {
 			

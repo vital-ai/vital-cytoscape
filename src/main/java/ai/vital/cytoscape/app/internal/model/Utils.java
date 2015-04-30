@@ -714,16 +714,17 @@ public class Utils {
 //		createIfNotExists(Attributes.canonicalName, String.class, nodeAttributes);
 		String resolvedName = PropertyUtils.resolveName(entity);
 //		nodeAttributes.set(Attributes.canonicalName, resolvedName);
+		createIfNotExists(Attributes.name, String.class, nodeAttributes);
 		nodeAttributes.set(Attributes.name, resolvedName);
 //		nodeAttributes.setAttribute(id, Attributes.category, entity.getCategoryID());
 //		nodeAttributes.setAttribute(id, Attributes.scope, entity.getScopeType().toString());
 //		nodeAttributes.setAttribute(id, Attributes.segment, entity.getSegmentName());
 //		nodeAttributes.setAttribute(id, Attributes.numInteractionEdges, entity.getNumInteractionEdges());
 //		nodeAttributes.setAttribute(id, Attributes.numSubsumptionEdges, entity.getNumSubsumptionEdges());
-		if(entity.getProperty("timestamp") != null ) {
-			createIfNotExists("timestamp", String.class, nodeAttributes);
-			nodeAttributes.set(Attributes.creationDate, TimeUtils.convertDate((Long)entity.getProperty("timestamp")));
-		}
+//		if(entity.getProperty("timestamp") != null ) {
+//			createIfNotExists("timestamp", String.class, nodeAttributes);
+//			nodeAttributes.set(Attributes.timestamp, TimeUtils.convertDate((Long)entity.getProperty("timestamp")));
+//		}
 //		nodeAttributes.setAttribute(id, Attributes.knownDate, TimeUtils.convertDate(entity.getKnownDate()));
 //		nodeAttributes.setAttribute(id, Attributes.modificationDate, TimeUtils.convertDate(entity.getModificationDate()));
 		
@@ -962,6 +963,18 @@ public class Utils {
 		
 		createIfNotExists(Attributes.edgeTypeURI, String.class, r);
 		r.set(Attributes.edgeTypeURI, VitalSigns.get().getRDFClass(relation.getClass()));
+		
+		String sourceURI = relation.getSourceURI();
+		if(sourceURI != null) {
+			createIfNotExists(Attributes.edgeSourceURI, String.class, r);
+			r.set(Attributes.edgeSourceURI, sourceURI);
+		}
+		
+		String destinationURI = relation.getDestinationURI();
+		if(destinationURI != null) {
+			createIfNotExists(Attributes.edgeDestinationURI, String.class, r);
+			r.set(Attributes.edgeDestinationURI, destinationURI);
+		}
 		
 	}
 

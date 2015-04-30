@@ -249,7 +249,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		
 		for(PropertyItem p : pItems) {
 			propertiesBox.addItem(p);
-			if((VitalOntology.NS + "hasName").equals(p.propertyURI)) {
+			if((VitalCoreOntology.NS + "hasName").equals(p.propertyURI)) {
 				nameItem = p;
 			}
 		}

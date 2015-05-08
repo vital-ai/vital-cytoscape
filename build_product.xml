@@ -1,0 +1,51 @@
+<project name="vital-cytoscape-distribution" default="main">
+	
+	<property name="dist.version" value="0.2.250" />
+	
+	<property name="prefix" value="vital-cytoscape" />
+	
+	<property name="product.zip" value="vital-cytoscape-${dist.version}.zip" />
+	
+	<property name="product.tar.gz" value="vital-cytoscape-${dist.version}.tar.gz" />
+	
+	<!-- generate distribution -->
+	<target name="main">
+		
+		<delete file="${product.zip}" />
+		<delete file="${product.tar.gz}" />
+		
+		<zip destfile="${product.zip}" compress="yes">
+			<!-- 
+    		<zipfileset dir="${basedir}" filemode="755" defaultexcludes="true" prefix="${prefix}">
+                <include name="bin/**"/>
+    		</zipfileset>
+			 -->
+			<zipfileset dir="${basedir}" defaultexcludes="true" prefix="${prefix}">
+				<include name="src/**" />
+				<include name=".classpath" />
+				<include name=".project" />
+				<include name="build.xml" />
+				<include name="MANIFEST.MF" />
+				<include name="pom.xml" />
+				<include name="README.md" />
+			</zipfileset>
+		</zip>
+		
+		<tar destfile="${product.tar.gz}" compression="gzip">
+			<!-- 
+			<tarfileset dir="${basedir}" filemode="755" defaultexcludes="true" prefix="${prefix}">
+				<include name="bin/**" />
+			</tarfileset>
+			 -->
+			<tarfileset dir="${basedir}" defaultexcludes="true" prefix="${prefix}">
+				<include name="src/**" />
+				<include name="build.xml" />
+				<include name="MANIFEST.MF" />
+				<include name="pom.xml" />
+				<include name="README.md" />
+			</tarfileset>
+		</tar>
+		
+	</target>
+	
+</project>

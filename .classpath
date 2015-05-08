@@ -30,9 +30,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry exported="true" kind="con" path="GROOVY_DSL_SUPPORT"/>
-	<classpathentry kind="var" path="VITAL_HOME/vital-triplestore/vital-triplestore-0.2.250.jar"/>
-	<classpathentry kind="var" path="VITAL_HOME/vital-triplestore/lib/externalsortinginjava-0.1.9/externalsortinginjava-0.1.9.jar"/>
-	<classpathentry kind="var" path="VITAL_HOME/vital-triplestore/lib/sesame-2.8.1/jackson-core-2.4.4.jar"/>
-	<classpathentry kind="var" path="VITAL_HOME/vital-triplestore/lib/sesame-2.8.1/openrdf-sesame-2.8.1-onejar.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

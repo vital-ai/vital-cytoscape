@@ -183,7 +183,7 @@ public class PathsTab extends JPanel {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
+		VitalServiceFactory.setServiceProfile("vitaldevelopmentprime");
 		
 		Application.initForTests(VitalServiceFactory.getVitalService());
 

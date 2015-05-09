@@ -48,6 +48,7 @@ import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
+import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.meta.PathElement;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
@@ -335,12 +336,14 @@ public class Application {
 		List<ResultElement> li = new ArrayList<ResultElement>();
 		rs.setResults(li);
 
-		Class<? extends GraphObject> gClass = VitalSigns.get().getGroovyClass(typeURI);
 		
 		
 		List<List<PathElement>> fPaths = null;
 		List<List<PathElement>> rPaths = null;
 		try {
+			ClassMetadata cm = VitalSigns.get().getClassesRegistry().getClass(typeURI) ;
+			if(cm == null) throw new Exception("Class not found: " + typeURI);
+			Class<? extends GraphObject> gClass = cm.getClazz();
 			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
 				fPaths = VitalSigns.get().getClassesRegistry().getPaths(gClass, true);
 			} else {
@@ -627,8 +630,11 @@ public class Application {
 			
 			String gname = (String) n.getProperty("name").toString();
 			
-			Class<? extends GraphObject> cls = (Class<? extends GraphObject>) VitalSigns.get().getGroovyClass(u);//Class.forName((String) n.getProperty("name"));
-			if(cls == null) throw new Exception("Class not found: " + gname + " uri: " + u);
+			ClassMetadata cm = VitalSigns.get().getClassesRegistry().getClass(u);
+			
+			if(cm == null) throw new Exception("Class not found: " + gname + " uri: " + u);
+			
+			Class<? extends GraphObject> cls = cm.getClazz();
 			child.cls = cls;
 			
 			parent.children.add(child);

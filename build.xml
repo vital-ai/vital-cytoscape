@@ -7,70 +7,44 @@
 	
 	<property name="maven.command" value="mvn" />
 	
-	<property name="maven.dist.jar" value="${basedir}/target/app-0.0.1-SNAPSHOT.jar" />
+	<property name="maven.dist.jar" value="${basedir}/target/vital-cytoscape-0.2.251.jar" />
 	
 	<property name="src-classes" value="${basedir}/local-repo/unjar-new" />
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-plugin-0.2.250.jar" />
+	<property name="dist.jar" value="${basedir}/vital-cytoscape-0.2.251.jar" />
 	
-	<target name="install-mvn-dependencies">
-		
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=vital-ai" />
-			<arg value="-DartifactId=vitalsigns" />
-			<arg value="-Dversion=0.2.250" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/command/VitalSigns-0.2.250.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
-				
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=vital-ai" />
-			<arg value="-DartifactId=vital-domain" />
-			<arg value="-Dversion=0.2.250" />
-			<arg value="-Dfile=${VITAL_HOME}/vital-domain/VitalDomain-groovy-0.2.250.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
-				
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=vital-ai" />
-			<arg value="-DartifactId=vitalservice" />
-			<arg value="-Dversion=0.2.250" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalservice/VitalService-0.2.250.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
+	<property name="build.javadoc" value="${basedir}/build_javadoc" />
 	
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=vital-ai" />
-			<arg value="-DartifactId=vital-lucene" />
-			<arg value="-Dversion=0.2.250" />
-			<arg value="-Dfile=${VITAL_HOME}/vital-lucene/vital-lucene-0.2.250.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
+	<property name="dist.javadoc" value="${basedir}/vital-cytoscape-0.2.251-javadoc.jar" />
+	
+	<path id="classpath">
+		<fileset dir="${VITAL_HOME}/vitalsigns/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<!--<pathelement location="D:/lib/groovy/groovy-2.2.2/embeddable/groovy-all-2.2.2-indy.jar" />-->
+	</path>
+	
+	<taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc" classpathref="classpath" onerror="report" />
+	
+	<target name="javadoc">
 		
 		
-		<exec command="${maven.command}">
-			<arg value="install:install-file" />
-			<arg value="-DgroupId=vital-ai" />
-			<arg value="-DartifactId=owl2vcs-vital" />
-			<arg value="-Dversion=0.0.1" />
-			<arg value="-Dfile=${VITAL_HOME}/vitalsigns/lib/owl2vcs-vital.jar" />
-			<arg value="-Dpackaging=jar" />
-			<arg value="-DgeneratePom=true" />
-		</exec>
+		<delete file="${dist.javadoc}" />
+		<delete dir="${build.javadoc}"/>
+		
+		<groovydoc author="true" destdir="${build.javadoc}" windowtitle="VitalSigns" sourcepath="${src.dir};${src.bootstrap.dir};${src.command.dir};${src.vitalservice.dir};${src.lucene.dir}" charset="UTF-8">
+		
+		</groovydoc>
+		
+		<jar destfile="${dist.javadoc}" basedir="${build.javadoc}"></jar>
+		
+		<delete dir="${build.javadoc}"/>
 		
 	</target>
 	
-	<target name="main" depends="">
+	<target name="main" depends="javadoc">
 	
 		<!-- build the project with maven -->
 		<exec executable="${maven.command}">
@@ -107,6 +81,7 @@
 				<!-- <include name="vital-dynamodb/**/*.jar" /> -->
 				<include name="vital-lucene/vital-lucene-*.jar" />
 				<include name="vital-triplestore/**/*.jar" />
+				<include name="vitalservice/VitalService-*.jar" />
 				<include name="vitalservice/VitalService-*.jar" />
 				
 			</zipgroupfileset>

@@ -755,7 +755,7 @@ public class Utils {
 //		}
 		
 		createIfNotExists(Attributes.nodeTypeURI, String.class, nodeAttributes);
-		nodeAttributes.set(Attributes.nodeTypeURI, VitalSigns.get().getRDFClass(entity.getClass()));
+		nodeAttributes.set(Attributes.nodeTypeURI, VitalSigns.get().getClassesRegistry().getClassURI(entity.getClass()));
 		
 		
 		/*XXX restore?
@@ -962,7 +962,7 @@ public class Utils {
 		r.set(Attributes.uri, relation.getURI());
 		
 		createIfNotExists(Attributes.edgeTypeURI, String.class, r);
-		r.set(Attributes.edgeTypeURI, VitalSigns.get().getRDFClass(relation.getClass()));
+		r.set(Attributes.edgeTypeURI, VitalSigns.get().getClassesRegistry().getClassURI(relation.getClass()));
 		
 		String sourceURI = relation.getSourceURI();
 		if(sourceURI != null) {

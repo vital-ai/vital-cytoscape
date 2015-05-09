@@ -1,6 +1,6 @@
 <project name="vital-cytoscape-distribution" default="main">
 	
-	<property name="dist.version" value="0.2.250" />
+	<property name="dist.version" value="0.2.251" />
 	
 	<property name="prefix" value="vital-cytoscape" />
 	
@@ -13,6 +13,10 @@
 		
 		<delete file="${product.zip}" />
 		<delete file="${product.tar.gz}" />
+		
+		<copy file="${basedir}/vital-cytoscape-${dist.version}-javadoc.jar" tofile="${basedir}/vital-cytoscape-${dist.version}-javadocs.zip" />
+		
+		<copy file="${basedir}/README.md" tofile="${basedir}/vital-cytoscape-${dist.version}-readme.txt" />
 		
 		<zip destfile="${product.zip}" compress="yes">
 			<!-- 

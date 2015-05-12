@@ -23,40 +23,6 @@
 		</resources>
 		<!-- Cytoscape requires Java 1.6 -->
 		<plugins>
-			<!-- 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<executions>
-					<execution>
-						<id>default-testCompile</id>
-						<phase>test-compile</phase>
-						<goals>
-							<goal>testCompile</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>default-compile</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-					<optimize>true</optimize>
-					<showWarnings>true</showWarnings>
-					<showDeprecation>true</showDeprecation>
-					<compilerArguments>
-						<Xmaxwarns>10000</Xmaxwarns>
-						<Xmaxerrs>10000</Xmaxerrs>
-					</compilerArguments>
-				</configuration>
-			</plugin>
-			 -->
  
 	        <plugin>
 		        <artifactId>maven-compiler-plugin</artifactId>
@@ -111,7 +77,6 @@
 				</configuration>
 			</plugin>
 			
-	<!-- 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -126,29 +91,21 @@
             <configuration>
 		      <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-				<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                    <file>${VITAL_HOME}/vital-ontology/vital-core-${vital.version}.owl</file>
-					<resource>resources/vital-ontology/vital-core-${vital.version}.owl</resource>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+				  <manifestEntries>
+                    <Import-Package>javax.swing,javax.swing.border,org.cytoscape.application;version="[3.0,4)",org.cytoscape.application.swing;version="[3.0,4)",org.cytoscape.service.util;version="[3.0,4)",org.cytoscape.view.model;version="[3.0,4)",org.osgi.framework;version="[1.5,2)",org.w3c.dom</Import-Package>
+                    <DynamicImport-Package>*</DynamicImport-Package>
+                    <Export-Package>ai.vital.domain,ai.vital.vitalsigns,org.apache.lucene,org.apache.lucene.util;uses:="org.apache.lucene.store,org.apache.lucene,org.apache.lucene.search,org.apache.lucene.index,org.apache.lucene.util.packed,org.apache.lucene.analysis.tokenattributes,org.apache.lucene.analysis,javax.management";version="4.7.0",org.apache.lucene.util.mutable;uses:="org.apache.lucene.util";version="4.7.0",org.apache.lucene.search.similarities;uses:="org.apache.lucene.search,org.apache.lucene.util,org.apache.lucene.index";version="4.7.0",org.apache.lucene;version="4.7.0",org.apache.lucene.codecs.lucene3x;uses:="org.apache.lucene.index,org.apache.lucene.codecs,org.apache.lucene.codecs.lucene40,org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.util.packed";version="4.7.0",org.apache.lucene.index;uses:="org.apache.lucene.util,org.apache.lucene.util.automaton,org.apache.lucene.codecs,org.apache.lucene.store,org.apache.lucene.util.packed,org.apache.lucene.search,org.apache.lucene.document,org.apache.lucene.codecs.lucene3x,org.apache.lucene.analysis.tokenattributes,org.apache.lucene.analysis,org.apache.lucene.search.similarities";version="4.7.0",org.apache.lucene.codecs.lucene42;uses:="org.apache.lucene.codecs.perfield,org.apache.lucene.codecs,org.apache.lucene.index,org.apache.lucene.codecs.lucene41,org.apache.lucene.codecs.lucene40,org.apache.lucene.util.packed,org.apache.lucene.util,org.apache.lucene.util.fst,org.apache.lucene.store,org.apache.lucene.codecs.compressing";version="4.7.0",org.apache.lucene.codecs.lucene41;uses:="org.apache.lucene.store,org.apache.lucene.util.packed,org.apache.lucene.codecs,org.apache.lucene.index,org.apache.lucene.codecs.compressing,org.apache.lucene.codecs.perfield,org.apache.lucene.codecs.lucene40,org.apache.lucene.util";version="4.7.0",org.apache.lucene.codecs.lucene40;uses:="org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.codecs,org.apache.lucene.codecs.perfield,org.apache.lucene.index,org.apache.lucene.util.packed,org.apache.lucene.document";version="4.7.0",org.apache.lucene.store;uses:="org.apache.lucene.util,org.apache.lucene.codecs,org.apache.lucene.index";version="4.7.0",org.apache.lucene.codecs.lucene46;uses:="org.apache.lucene.codecs.perfield,org.apache.lucene.codecs,org.apache.lucene.codecs.lucene42,org.apache.lucene.codecs.lucene41,org.apache.lucene.codecs.lucene40,org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.index";version="4.7.0",org.apache.lucene.codecs.lucene45;uses:="org.apache.lucene.codecs.perfield,org.apache.lucene.codecs,org.apache.lucene.codecs.lucene42,org.apache.lucene.codecs.lucene41,org.apache.lucene.codecs.lucene40,org.apache.lucene.index,org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.util.packed";version="4.7.0",org.apache.lucene.search.payloads;uses:="org.apache.lucene.search,org.apache.lucene.util,org.apache.lucene.search.spans,org.apache.lucene.search.similarities,org.apache.lucene.index";version="4.7.0",org.apache.lucene.search.doc-files;version="4.7.0",org.apache.lucene.document;uses:="org.apache.lucene.util,org.apache.lucene.index,org.apache.lucene.analysis.tokenattributes,org.apache.lucene.analysis";version="4.7.0",org.apache.lucene.codecs.compressing;uses:="org.apache.lucene.store,org.apache.lucene.index,org.apache.lucene.codecs,org.apache.lucene.util,org.apache.lucene.util.packed,org.apache.lucene.document";version="4.7.0",org.apache.lucene.analysis.tokenattributes;uses:="org.apache.lucene.util";version="4.7.0",org.apache.lucene.codecs.perfield;uses:="org.apache.lucene.codecs,org.apache.lucene.util,org.apache.lucene.index";version="4.7.0",org.apache.lucene.util.packed;uses:="org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.search,org.apache.lucene.index,org.apache.lucene.codecs";version="4.7.0",org.apache.lucene.util.automaton;uses:="org.apache.lucene.util,org.apache.lucene.search,org.apache.lucene.index,org.apache.lucene.util.fst";version="4.7.0",org.apache.lucene.search.spans;uses:="org.apache.lucene.util,org.apache.lucene.search,org.apache.lucene.index,org.apache.lucene.search.similarities";version="4.7.0",org.apache.lucene.search;uses:="org.apache.lucene.util,org.apache.lucene.util.automaton,org.apache.lucene.index,org.apache.lucene.search.similarities,org.apache.lucene.util.packed,org.apache.lucene.document,org.apache.lucene.store";version="4.7.0",org.apache.lucene.util.fst;uses:="org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.util.packed,org.apache.lucene.codecs";version="4.7.0",org.apache.lucene.analysis;uses:="org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.analysis.tokenattributes,org.apache.lucene.util.automaton";version="4.7.0",org.apache.lucene.codecs;uses:="org.apache.lucene.index,org.apache.lucene.util,org.apache.lucene.store,org.apache.lucene.util.automaton,org.apache.lucene.util.fst,org.apache.lucene.document";version="4.7.0"</Export-Package>
+                  </manifestEntries>
                 </transformer>
-                
-				<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                    <file>${VITAL_HOME}/vital-license/vital-license.lic</file>
-					<resource>resources/vital-license/vital-license.lic</resource>
-                </transformer>
-                
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                    <file>${VITAL_HOME}/vital-config/vitalservice/vitalservice.config</file>
-					<resource>resources/vital-config/vitalservice/vitalservice.config</resource>
-                </transformer>
-                
               </transformers>
               <artifactSet>
                 <includes>
                   <include>vital-ai:vitalsigns:*</include>
                   <include>org.codehaus.groovy:groovy-all:*</include>
-                  <include>commons-codec:commons-codec:1.5</include>
-                  <include>commons-httpclient:commons-httpclient:3.1</include>
-                  <include>commons-io:commons-io:2.1</include>
+                  <include>commons-codec:commons-codec:*</include>
+                  <include>commons-httpclient:commons-httpclient:*</include>
+                  <include>commons-io:commons-io:*</include>
                   <include>org.apache.commons:commons-lang3:*</include>
                   <include>commons-logging:commons-logging:*</include>
                   <include>com.typesafe:config:*</include>
@@ -156,11 +113,10 @@
                   <include>org.apache.jena:jena-core:*</include>
                   <include>org.apache.jena:jena-iri:*</include>
                   <include>com.ibm.icu:icu4j:*</include>
-                  <include>log4j:log4j:1.2.16</include>
+                  <include>log4j:log4j:*</include>
                   <include>org.apache.lucene:*</include>
                   <include>org.slf4j:*</include>
                   <include>net.sf.trove4j:trove4j:*</include>
-                  <include>xerces:xercesImpl:*</include>
                   <include>xerces:xercesImpl:*</include>
                   
                   <include>vital-ai:vital-domain:*</include>
@@ -172,10 +128,10 @@
                   
                   <include>com.fasterxml.jackson.core:*</include>
                   
+                  <include>com.google.code.externalsortinginjava:*</include>
+                  
                 </includes>
-                <excludes>
-                	
-                </excludes>
+                
               </artifactSet>
               <filters>
               <filter>
@@ -193,10 +149,8 @@
           </execution>
         </executions>
       </plugin>
-      
-       -->
 			
-		</plugins>
+	  </plugins>
 	</build>
 
 	<!-- Links to the Cytoscape Maven repositories. -->

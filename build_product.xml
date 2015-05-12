@@ -28,7 +28,7 @@
 				<include name="src/**" />
 				<include name=".classpath" />
 				<include name=".project" />
-				<include name="build.xml" />
+				<!-- <include name="build.xml" /> -->
 				<include name="MANIFEST.MF" />
 				<include name="pom.xml" />
 				<include name="README.md" />
@@ -43,7 +43,9 @@
 			 -->
 			<tarfileset dir="${basedir}" defaultexcludes="true" prefix="${prefix}">
 				<include name="src/**" />
-				<include name="build.xml" />
+				<include name=".classpath" />
+				<include name=".project" />
+				<!-- <include name="build.xml" /> -->
 				<include name="MANIFEST.MF" />
 				<include name="pom.xml" />
 				<include name="README.md" />

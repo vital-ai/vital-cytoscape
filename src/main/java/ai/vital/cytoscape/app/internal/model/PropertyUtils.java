@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import ai.vital.property.IProperty;
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;

@@ -56,7 +56,7 @@ import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.DatascriptInfo;
-import ai.vital.property.IProperty;
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;

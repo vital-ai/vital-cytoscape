@@ -1,6 +1,6 @@
 package ai.vital.cytoscape.app.internal.queries
 
-import ai.vital.property.URIProperty;
+import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.query.querybuilder.VitalBuilder
 import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;

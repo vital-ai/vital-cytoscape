@@ -30,7 +30,7 @@ import com.typesafe.config.Config;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
-import ai.vital.endpoint.EndpointType;
+import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
 

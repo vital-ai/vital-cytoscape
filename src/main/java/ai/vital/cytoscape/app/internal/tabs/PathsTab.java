@@ -19,7 +19,7 @@ import ai.vital.cytoscape.app.internal.app.Application.HierarchyNode;
 import ai.vital.cytoscape.app.internal.panels.JCheckBoxTree;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.domain.ontology.VitalOntology;
-import ai.vital.endpoint.EndpointType;
+import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.VitalServiceFactory;

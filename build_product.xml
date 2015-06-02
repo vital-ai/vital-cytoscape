@@ -1,6 +1,6 @@
 <project name="vital-cytoscape-distribution" default="main">
 	
-	<property name="dist.version" value="0.2.251" />
+	<fail unless="dist.version" message="dist.version property not set!" />
 	
 	<property name="prefix" value="vital-cytoscape" />
 	

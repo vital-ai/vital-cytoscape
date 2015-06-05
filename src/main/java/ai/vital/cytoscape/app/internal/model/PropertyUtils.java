@@ -79,11 +79,11 @@ public class PropertyUtils {
 				
 			}
 			
-			return (String) entity.getProperty("name");
+			return (String) entity.getProperty("name").toString();
 			
 		} catch(Exception e) {
 			
-			return "Unhandled: " + entity.toString();
+			return "Unhandled: " + entity.getClass().getCanonicalName();
 			
 		}
 		

@@ -303,6 +303,8 @@ public class Application {
 	@SuppressWarnings("unchecked")
 	public ResultList getConnections(String uri_str, String typeURI) {
 
+		log.info("Getting connections, URI: {}, typeURI: {}", uri_str, typeURI);
+		
 		//expansion
 		/*
 		GraphObject graphObject = null;
@@ -361,8 +363,9 @@ public class Application {
 			PathElement pe = p.get(0);
 			if(!pe.isHyperedge()) rClasses.add((Class<? extends VITAL_Edge>) pe.getEdgeClass());
 		}
-		
+
 		if(fClasses.size() == 0 && rClasses.size() == 0) {
+			log.warn("No path classes found, {}", typeURI);
 			return rs;
 		}
 
@@ -392,6 +395,10 @@ public class Application {
 	
 				vpq.setSegments(serviceSegments);
 				ResultList rl = vitalService.query(vpq);
+				
+				if(rl.getStatus().getStatus() != VitalStatus.Status.ok) {
+					log.error("Query error: " + rl.getStatus().getMessage());
+				}
 				
 				li.addAll(rl.getResults());
 				

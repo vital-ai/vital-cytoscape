@@ -21,10 +21,10 @@ import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.Job;
-import ai.vital.vitalservice.EndpointType;
 import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
 import ai.vital.prime.service.config.VitalServicePrimeConfig;
+import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.exception.VitalServiceException;
@@ -34,15 +34,6 @@ import ai.vital.vitalservice.model.App;
 import ai.vital.vitalservice.model.Organization;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
-import ai.vital.vitalservice.query.Connector;
-import ai.vital.vitalservice.query.Destination;
-import ai.vital.vitalservice.query.GraphElement;
-import ai.vital.vitalservice.query.QueryContainerType;
-import ai.vital.vitalservice.query.Source;
-import ai.vital.vitalservice.query.VitalGraphArcContainer;
-import ai.vital.vitalservice.query.VitalGraphArcElement;
-import ai.vital.vitalservice.query.VitalGraphCriteriaContainer;
-import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
@@ -51,12 +42,11 @@ import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.meta.PathElement;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
-import ai.vital.vitalsigns.model.VITAL_Edge_PropertiesHelper;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 public class Application {
 
@@ -465,8 +455,8 @@ public class Application {
 				
 				GraphObject g = iterator.next();
 				if(g instanceof Job) {
-					Boolean callable = (Boolean) g.getProperty("callable");
-					if(callable == null || callable.equals(Boolean.FALSE)) {
+					IProperty callable = (IProperty) g.getProperty("callable");
+					if(callable == null || callable.rawValue().equals(Boolean.FALSE)) {
 						iterator.remove();
 					}
 				}

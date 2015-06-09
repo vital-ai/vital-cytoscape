@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
+import ai.vital.domain.Edge_hasCategory;
 import ai.vital.domain.Job;
 import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
@@ -40,6 +41,7 @@ import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.meta.PathElement;
+import ai.vital.vitalsigns.model.Edge_hasChildCategory;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
@@ -365,14 +367,30 @@ public class Application {
 		}
 
 		if(fClasses.size() == 0 && rClasses.size() == 0) {
-			log.warn("No path classes found, {}", typeURI);
-			return rs;
+//			log.warn("No path classes found, {}", typeURI);
+//			return rs;
 		}
 
 		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
 		try {
 			serviceSegments = getServiceSegments();
 		} catch (Exception e1) {
+		}
+		
+		
+		
+		//XXX temporarily override f and r classes
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+			fClasses.add(Edge_hasChildCategory.class);
+		} else {
+			fClasses.clear();
+		}
+		
+		//XXX temporarily override f and r classes
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+			rClasses.add(Edge_hasChildCategory.class);
+		} else {
+			rClasses.clear();
 		}
 		
 		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);

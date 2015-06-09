@@ -1,6 +1,7 @@
 package ai.vital.cytoscape.app.internal.queries
 
 import ai.vital.vitalsigns.model.property.URIProperty;
+import ai.vital.query.Utils;
 import ai.vital.query.querybuilder.VitalBuilder
 import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;
@@ -84,6 +85,9 @@ class Queries {
 						
 						value direction: 'forward'
 						
+						edge_constraint { Utils.PropertyConstraint("edgeSource").exists() }
+						
+/*						
 						AND {
 						OR {
 							
@@ -95,6 +99,7 @@ class Queries {
 							
 						}
 						}
+*/
 					}
 										
 				}
@@ -104,7 +109,10 @@ class Queries {
 					ARC {
 					
 						value direction: 'reverse'
-					
+						
+						edge_constraint { Utils.PropertyConstraint("edgeSource").exists() }
+						
+/*
 						AND {
 						OR {
 							for( Class<? extends VITAL_Edge> c : reverseEdgeTypes ) {
@@ -114,6 +122,7 @@ class Queries {
 							}
 						}
 						}
+*/
 						
 					}
 					

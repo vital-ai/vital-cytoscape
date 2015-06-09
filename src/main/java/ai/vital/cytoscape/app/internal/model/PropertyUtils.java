@@ -79,7 +79,10 @@ public class PropertyUtils {
 				
 			}
 			
-			return (String) entity.getProperty("name").toString();
+			Object v = entity.getProperty("name");
+			if(v != null) return v.toString();
+			
+			return "";
 			
 		} catch(Exception e) {
 			

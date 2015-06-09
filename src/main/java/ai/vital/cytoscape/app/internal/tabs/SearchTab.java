@@ -60,10 +60,13 @@ import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.domain.ontology.VitalOntology;
+import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.model.property.IProperty;
+import ai.vital.vitalsigns.model.property.StringProperty;
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
+import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.QueryContainerType;
@@ -76,6 +79,8 @@ import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Node;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
+import ai.vital.vitalsigns.properties.PropertiesRegistry;
+import ai.vital.vitalsigns.properties.PropertyMetadata;
 import ai.vital.vitalsigns.rdf.RDFUtils;
 
 public class SearchTab extends JPanel implements ListSelectionListener,
@@ -169,7 +174,8 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		
 		propertiesBox = new JComboBox<PropertyItem>();
 		
-		initProprtiesBox();
+//		initProprtiesBox();
+		initPropertiesBox2();
 		
 		
 		setLayout(new BorderLayout());
@@ -185,6 +191,62 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	}
 
+	private void initPropertiesBox2() {
+		
+		List<PropertyItem> pItems = new ArrayList<PropertyItem>();
+		
+		PropertiesRegistry propertiesRegistry = VitalSigns.get().getPropertiesRegistry();
+		
+		List<ClassMetadata> allClasses = VitalSigns.get().getClassesRegistry().listAllClasses();
+		
+		Set<String> pURIs = new HashSet<String>();
+		
+		for(ClassMetadata cm : allClasses) {
+			
+			if( ! VITAL_Node.class.isAssignableFrom( cm.getClazz() ) ) continue;
+			
+			List<PropertyMetadata> classProperties = propertiesRegistry.getClassProperties(cm.getClazz());
+		
+			for(PropertyMetadata pm : classProperties) {
+				
+				if(pURIs.contains( pm.getURI() ) ) continue;
+				
+				if( ! StringProperty.class.equals( pm.getBaseClass() ) ) continue;
+				
+				pItems.add(new PropertyItem(pm.getShortName(), pm.getURI()));
+				
+				pURIs.add(pm.getURI());
+				
+			}
+			
+		}
+		
+		Collections.sort(pItems, new java.util.Comparator<PropertyItem>(){
+
+			@Override
+			public int compare(PropertyItem arg0, PropertyItem arg1) {
+				int c = arg0.propertyName.compareToIgnoreCase(arg1.propertyName);
+				if(c != 0) return c;
+				return arg0.propertyURI.compareToIgnoreCase(arg1.propertyURI);
+			}});
+		
+		
+		PropertyItem nameItem = null;
+		
+		for(PropertyItem p : pItems) {
+			propertiesBox.addItem(p);
+			if((VitalCoreOntology.NS + "hasName").equals(p.propertyURI)) {
+				nameItem = p;
+			}
+		}
+		
+		if(nameItem != null) {
+			propertiesBox.setSelectedItem(nameItem);
+		}
+		
+	}
+	
+	@Deprecated
 	private void initProprtiesBox() {
 
 		OntModel ontModel = VitalSigns.get().getOntologyModel();
@@ -834,10 +896,21 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests(null);
+		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		SearchTab panel = new SearchTab();
 
+		for(int i = 0 ; i < panel.propertiesBox.getModel().getSize(); i++) {
+			
+			PropertyItem elementAt = panel.propertiesBox.getModel().getElementAt(i);
+			
+			System.out.println(elementAt.propertyURI + "\t" + elementAt.propertyName);
+			
+		}
+		
+		if(true)return;
+		
+		
 		panel.getSegmentsPanel().setSegmentsList(Application.get().getServiceSegments());
 		
 		panel.setSize(400, 400);

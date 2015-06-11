@@ -1,5 +1,11 @@
 <project name="vital-cytoscape-distribution" default="main">
 	
+	<property environment="env" />
+	<fail unless="env.VITAL_HOME" message="VITAL_HOME env variable not set!" />
+	<property name="VITAL_HOME" value="${env.VITAL_HOME}" />
+	<echo message="VITAL_HOME: ${VITAL_HOME}" />
+
+	
 	<fail unless="dist.version" message="dist.version property not set!" />
 	
 	<property name="prefix" value="vital-cytoscape" />
@@ -8,13 +14,35 @@
 	
 	<property name="product.tar.gz" value="vital-cytoscape-${dist.version}.tar.gz" />
 	
+	<path id="classpath">
+		<fileset dir="${VITAL_HOME}/vitalsigns/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<!--<pathelement location="D:/lib/groovy/groovy-2.2.2/embeddable/groovy-all-2.2.2-indy.jar" />-->
+	</path>
+	
+	<taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc" classpathref="classpath" onerror="report" />
+	
+	<property name="build.javadoc" value="${basedir}/build_javadoc" />
+	
+	<property name="dist.javadoc" value="${basedir}/vital-cytoscape-${dist.version}-javadocs.zip" />
+	
 	<!-- generate distribution -->
 	<target name="main">
 		
 		<delete file="${product.zip}" />
 		<delete file="${product.tar.gz}" />
 		
-		<copy file="${basedir}/vital-cytoscape-${dist.version}-javadoc.jar" tofile="${basedir}/vital-cytoscape-${dist.version}-javadocs.zip" />
+		<delete file="${dist.javadoc}" />
+		<delete dir="${build.javadoc}"/>
+		
+		<groovydoc author="true" destdir="${build.javadoc}" windowtitle="aspen-datascripts ${dist.version}" sourcepath="${basedir}/src/main/groovy" charset="UTF-8">
+		
+		</groovydoc>
+		
+		<jar destfile="${dist.javadoc}" basedir="${build.javadoc}"></jar>
+		
+		<delete dir="${build.javadoc}"/>
 		
 		<copy file="${basedir}/README.md" tofile="${basedir}/vital-cytoscape-${dist.version}-readme.txt" />
 		

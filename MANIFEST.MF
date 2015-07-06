@@ -6,7 +6,7 @@ Bundle-Activator: ai.vital.cytoscape.app.internal.CyActivator
 Bundle-ManifestVersion: 2
 Bundle-Name: ai.vital.cytoscape.app
 Bundle-SymbolicName: ai.vital.cytoscape.app
-Bundle-Version: 0.2.252
+Bundle-Version: 0.2.253
 Created-By: Apache Maven Bundle Plugin
 Import-Package: javax.swing,javax.swing.border,org.cytoscape.applicati
  on;version="[3.0,4)",org.cytoscape.application.swing;version="[3.0,4)",

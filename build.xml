@@ -7,17 +7,17 @@
 	
 	<property name="maven.command" value="mvn" />
 	
-	<property name="maven.dist.jar" value="${basedir}/target/vital-cytoscape-0.2.252.jar" />
+	<property name="maven.dist.jar" value="${basedir}/target/vital-cytoscape-0.2.253.jar" />
 	
 	<property name="src-classes" value="${basedir}/local-repo/unjar-new" />
 	
 	<property name="build.dir" value="${basedir}/build" />
 	
-	<property name="dist.jar" value="${basedir}/vital-cytoscape-0.2.252.jar" />
+	<property name="dist.jar" value="${basedir}/vital-cytoscape-0.2.253.jar" />
 	
 	<property name="build.javadoc" value="${basedir}/build_javadoc" />
 	
-	<property name="dist.javadoc" value="${basedir}/vital-cytoscape-0.2.252-javadoc.jar" />
+	<property name="dist.javadoc" value="${basedir}/vital-cytoscape-0.2.253-javadoc.jar" />
 	
 	<path id="classpath">
 		<fileset dir="${VITAL_HOME}/vitalsigns/lib">

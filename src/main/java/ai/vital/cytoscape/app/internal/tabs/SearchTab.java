@@ -641,18 +641,20 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				
 				Set<String> uris = new HashSet<String>();
 				
-				for(String ns : VitalSigns.get().getOntologyURI2Segment().keySet()) {
+				List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
+				
+//				for(String ns : VitalSigns.get().getOntologyURI2Segment().keySet()) {
 					
-					ResultList rs = VitalSigns.get().query(sq, Arrays.asList(ns));
+					ResultList rsx = VitalSigns.get().query(sq, nsList);
 					
-					for(ResultElement r : rs.getResults()) {
+					for(ResultElement r : rsx.getResults()) {
 						GraphObject g = r.getGraphObject();
 						if(g instanceof VITAL_Node && uris.add(g.getURI())) {
 							lastResults.add((VITAL_Node) g);
 						}
 					}
 					
-				}
+//				}
 				
 				
 				sq.setSegments(segments);

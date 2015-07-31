@@ -117,7 +117,11 @@ public class Application {
 		
 		log.info("$VITAL_HOME: " + vitalHome);
 //		o("Singleton obtained, registering vital domain ontology...");
+		
+		/*
+		 * 
 		File domainJarsDir = new File(vitalHome, "domain-groovy-jar");
+		
 		log.info("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
 		//vs.registerOntology(new VitalOntology());
 		
@@ -141,6 +145,8 @@ public class Application {
 		} else {
 			log.warn("WARN - $VITAL_HOME/domain-jar/ directory does not exist");
 		}
+		
+		*/
 	
 		
 		/*
@@ -395,17 +401,20 @@ public class Application {
 		
 		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
 		
-		for(Entry<String, LuceneSegment> en : VitalSigns.get().getOntologyURI2Segment().entrySet()) {
+		
+		List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
+		
+//		for(Entry<String, LuceneSegment> en : VitalSigns.get().getOntologyURI2Segment().entrySet()) {
 			
-			String domainSegment = en.getKey();
+//			String domainSegment = en.getKey();
 
-			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+//			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
 			
-			ResultList rl = VitalSigns.get().query(vpq, Arrays.asList(domainSegment));
+			ResultList rlx = VitalSigns.get().query(vpq, nsList);
 			
-			li.addAll(rl.getResults());
+			li.addAll(rlx.getResults());
 			
-		}
+//		}
 		
 		if(serviceSegments.size() > 0){
 		

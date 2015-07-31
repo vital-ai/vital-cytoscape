@@ -409,10 +409,16 @@ public class Application {
 //			String domainSegment = en.getKey();
 
 //			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+		
+		for(String domainSegment : nsList) {
 			
+			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
 			ResultList rlx = VitalSigns.get().query(vpq, nsList);
-			
 			li.addAll(rlx.getResults());
+			
+		}
+		
+			
 			
 //		}
 		

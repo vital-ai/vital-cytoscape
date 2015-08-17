@@ -407,21 +407,23 @@ public class Application {
 			rClasses.clear();
 		}
 		
-//		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
-		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, 0, 1000, fClasses, rClasses);
+//		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, 0, 1000, fClasses, rClasses);
+		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
 		
 		List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
-		
-//		for(Entry<String, LuceneSegment> en : VitalSigns.get().getOntologyURI2Segment().entrySet()) {
-			
-//			String domainSegment = en.getKey();
-
-//			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
 		
 		for(String domainSegment : nsList) {
 			
 			try {
 				
+				vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+				
+				ResultList rlx = VitalSigns.get().query(vpq, nsList);
+				
+				filterGraphMatch(rlx, resultsMap);
+				
+				
+				/*
 				int offset = 0 ;
 				int limit = 1000;
 				
@@ -453,6 +455,7 @@ public class Application {
 					filterGraphMatch(rlx, resultsMap);
 					
 				}
+				*/
 			
 			} catch (Exception e) {
 				log.error(e.getLocalizedMessage(), e);
@@ -468,6 +471,12 @@ public class Application {
 		
 			try {
 	
+				vpq.setSegments(serviceSegments);
+				ResultList rlx = vitalService.query(vpq);
+				
+				filterGraphMatch(rlx, resultsMap);
+				
+				/*
 				int offset = 0 ;
 				int limit = 1000;
 				
@@ -499,7 +508,7 @@ public class Application {
 					filterGraphMatch(rlx, resultsMap);
 					
 				}
-				
+				*/
 			} catch (Exception e) {
 				log.error(e.getLocalizedMessage(), e);
 			}

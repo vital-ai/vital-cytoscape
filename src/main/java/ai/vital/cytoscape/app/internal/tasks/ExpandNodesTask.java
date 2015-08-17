@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 
@@ -20,6 +21,7 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+import org.cytoscape.work.swing.DialogTaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -319,10 +321,11 @@ public class ExpandNodesTask implements Task {
 				
 			}
 			
-			
-			TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
-			
-			VitalAICytoscapePlugin.getDialogTaskManager().execute(ti);
+
+			//disabled nodes expansion here, call it once after all nodes are epxanded
+			//XXX
+//			TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
+//			VitalAICytoscapePlugin.getDialogTaskManager().execute(ti);
 			
 //				Utils.getKamadaKawaiLayoutAlgorithm().setSelectedOnly(true);
 				
@@ -493,6 +496,8 @@ public class ExpandNodesTask implements Task {
 	        
 			int nouris = 0;
 			
+			Set<View<CyNode>> allNodeViews = new HashSet<View<CyNode>>();
+			
 	        
 			while (i.hasNext()) {
 				
@@ -542,8 +547,9 @@ public class ExpandNodesTask implements Task {
 						
 //						objects = filterNodesAndSegments(rs_relations);
 						
-						processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+						List<View<CyNode>> processed = processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
 						
+						allNodeViews.addAll(processed);
 						
 						
 					}
@@ -566,7 +572,6 @@ public class ExpandNodesTask implements Task {
 			
 			taskMonitor.setStatusMessage("Done!");
 			
-			taskMonitor.setProgress(1D);
 			
 //			Utils.applyVisualStyle(cyNet);
 			VisualStyleUtils.applyVisualStyle(myView);
@@ -584,6 +589,17 @@ public class ExpandNodesTask implements Task {
 			if(nouris > 0 && processed_nodes == nouris) {
 				JOptionPane.showMessageDialog(null, "No nodes with URI property, at least one required", "Expansion error", JOptionPane.ERROR_MESSAGE);
 			}
+			
+			if(allNodeViews.size() > 0) {
+				
+				TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(allNodeViews), "");
+				DialogTaskManager dialogTaskManager = VitalAICytoscapePlugin.getDialogTaskManager();
+				dialogTaskManager.execute(ti);
+				
+			}
+
+			taskMonitor.setProgress(1D);
+			
 			
 		}
 		

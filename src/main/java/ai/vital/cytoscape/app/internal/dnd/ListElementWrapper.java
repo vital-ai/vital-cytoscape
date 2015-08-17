@@ -36,17 +36,24 @@ public class ListElementWrapper {
 	
 	@Override
 	public String toString() {
+		
+		String r = null;
+		
 		if(specialLabel != null) {
-			return specialLabel;
-
-
+			r = specialLabel;
 		} else {
 			String s = (String) entity.getProperty("name");
 			if(s == null || s.isEmpty()) {
 				s = "(no label)";
 			}
-			return s;
+			r = s;
 		}
+		
+		if(r.length() > 100) {
+			r = r.substring(0, 98) + "...";
+		}
+		
+		return r;
 	}
 	
 	

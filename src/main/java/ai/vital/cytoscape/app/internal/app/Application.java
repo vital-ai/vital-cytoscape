@@ -35,17 +35,21 @@ import ai.vital.vitalservice.model.App;
 import ai.vital.vitalservice.model.Organization;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
+import ai.vital.vitalservice.query.VitalGraphQuery;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
+import ai.vital.vitalsigns.block.CompactStringSerializer;
 import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.meta.PathElement;
 import ai.vital.vitalsigns.model.Edge_hasChildCategory;
+import ai.vital.vitalsigns.model.GraphMatch;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
 import ai.vital.vitalsigns.model.property.IProperty;
+import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 import com.typesafe.config.Config;
@@ -57,6 +61,8 @@ public class Application {
 	private List<LoginListener> loginListeners = new ArrayList<LoginListener>();
 
 	private final static Logger log = LoggerFactory.getLogger(Application.class);
+
+	private static final int HARD_LIMIT = 10000;
 
 	//managed by connection tab
 	private VitalService vitalService = null;
@@ -332,9 +338,10 @@ public class Application {
 		if(depth == null) depth = 1;
 		
 		ResultList rs = new ResultList();
-		List<ResultElement> li = new ArrayList<ResultElement>();
-		rs.setResults(li);
+//		List<ResultElement> li = new ArrayList<ResultElement>();
+//		rs.setResults(li);
 
+		Map<String, GraphObject> resultsMap = new HashMap<String, GraphObject>();
 		
 		
 		List<List<PathElement>> fPaths = null;
@@ -356,6 +363,7 @@ public class Application {
 			}
 		} catch (Exception e2) {
 			log.error(e2.getLocalizedMessage(), e2);
+			rs.setStatus(VitalStatus.withError(e2.getLocalizedMessage()));
 			return rs;
 		}
 		
@@ -399,8 +407,8 @@ public class Application {
 			rClasses.clear();
 		}
 		
-		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
-		
+//		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, 0, 1000, fClasses, rClasses);
 		
 		List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
 		
@@ -412,9 +420,43 @@ public class Application {
 		
 		for(String domainSegment : nsList) {
 			
-			vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
-			ResultList rlx = VitalSigns.get().query(vpq, nsList);
-			li.addAll(rlx.getResults());
+			try {
+				
+				int offset = 0 ;
+				int limit = 1000;
+				
+				vgq.setOffset(limit);
+				vgq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+				
+				while (offset >= 0) {
+					
+					vgq.setOffset(offset);
+					
+					ResultList rlx = VitalSigns.get().query(vgq, nsList);
+					
+					if(rlx.getResults().size() < limit) {
+						
+						offset = -1;
+						
+					} else if(offset + limit >= HARD_LIMIT) {
+						
+						log.info("Local Query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+						
+						offset = -1;
+						
+					} else {
+						
+						offset += limit;
+						
+					}
+					
+					filterGraphMatch(rlx, resultsMap);
+					
+				}
+			
+			} catch (Exception e) {
+				log.error(e.getLocalizedMessage(), e);
+			}
 			
 		}
 		
@@ -426,31 +468,102 @@ public class Application {
 		
 			try {
 	
-				vpq.setSegments(serviceSegments);
-				ResultList rl = vitalService.query(vpq);
+				int offset = 0 ;
+				int limit = 1000;
 				
-				if(rl.getStatus().getStatus() != VitalStatus.Status.ok) {
-					log.error("Query error: " + rl.getStatus().getMessage());
+				vgq.setOffset(limit);
+				vgq.setSegments(serviceSegments);
+				
+				while (offset >= 0) {
+					
+					vgq.setOffset(offset);
+					
+					ResultList rlx = vitalService.query(vgq);
+					
+					if(rlx.getResults().size() < limit) {
+						
+						offset = -1;
+						
+					} else if(offset + limit >= HARD_LIMIT) {
+						
+						log.info("Service query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+						
+						offset = -1;
+						
+					} else {
+						
+						offset += limit;
+						
+					}
+					
+					filterGraphMatch(rlx, resultsMap);
+					
 				}
-				
-				li.addAll(rl.getResults());
 				
 			} catch (Exception e) {
 				log.error(e.getLocalizedMessage(), e);
 			}
 		}
 		
-		
-		//filter out duplicate URIs objects now
-		Set<String> uris = new HashSet<String>(); 
-		for( Iterator<ResultElement> iterator = rs.getResults().iterator(); iterator.hasNext(); ) {
-			ResultElement next = iterator.next();
-			if(!uris.add(next.getGraphObject().getURI())) {
-				iterator.remove();
-			}
+
+		for(Entry<String, GraphObject> entry : resultsMap.entrySet()) {
+			
+			rs.getResults().add(new ResultElement(entry.getValue(), 1D));
+			
 		}
 		
 		return rs;
+		
+	}
+
+	public static void filterGraphMatch(ResultList rlx,
+			Map<String, GraphObject> resultsMap) {
+
+		
+		Set<String> uriProps = new HashSet<String>();
+		
+		for(GraphObject g : rlx) {
+			
+			if(g instanceof GraphMatch) {
+
+				uriProps.clear();
+				
+				for(IProperty p : g.getPropertiesMap().values()) {
+					if(!(p instanceof URIProperty)) continue;
+					URIProperty u = (URIProperty) p;
+					
+					String objURI = u.get();
+					if(resultsMap.containsKey(objURI)) {
+						
+						continue;
+						
+					}
+					
+					uriProps.add(objURI);
+				}
+				
+				for(String uriProp : uriProps) {
+					
+					Object v = g.getProperty(uriProp);
+					if(v == null || !(v instanceof GraphObject)) continue;
+					
+					GraphObject gx = (GraphObject) v;
+					
+					resultsMap.put(gx.getURI(), gx);
+					
+				}
+				
+			} else {
+				
+				if(resultsMap.containsKey(g.getURI())) continue;
+				
+				resultsMap.put(g.getURI(), g);
+				
+			}
+			
+			
+		}
+		
 		
 	}
 

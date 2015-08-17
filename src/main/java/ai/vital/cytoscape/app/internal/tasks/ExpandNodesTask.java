@@ -540,14 +540,18 @@ public class ExpandNodesTask implements Task {
 						List<GraphObject> objects = new ArrayList<GraphObject>();
 						
 						//get filters and direction from path tab
+						long s = System.currentTimeMillis();
 						ResultList rs_connections = Application.get().getConnections(uri_str, typeURI);
 						for(ResultElement g : rs_connections.getResults()) {
 							objects.add(g.getGraphObject());
 						}
 						
+						log.info("Results fetch time: {}ms", System.currentTimeMillis() - s );
 //						objects = filterNodesAndSegments(rs_relations);
 						
+						s = System.currentTimeMillis();
 						List<View<CyNode>> processed = processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+						log.info("Results processing time: {}ms", System.currentTimeMillis() - s);
 						
 						allNodeViews.addAll(processed);
 						

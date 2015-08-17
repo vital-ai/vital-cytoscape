@@ -3,6 +3,7 @@ package ai.vital.cytoscape.app.internal.queries
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.query.Utils;
 import ai.vital.query.querybuilder.VitalBuilder
+import ai.vital.vitalservice.query.VitalGraphQuery;
 import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
@@ -64,6 +65,178 @@ class Queries {
 		}.toQuery()
 		
 		return selectQuery
+		
+	}
+	
+	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes) {
+		
+		if(depth > 2) throw new RuntimeException("max depth 2 supported at this moment")
+		
+		def graphQueryObj = builder.query {
+			
+			GRAPH {
+				
+				value segments: segments
+				
+				value offset: offset
+				
+				value limit: limit
+				
+				value inlineObjects: true
+				
+				ARC {
+					
+					node_constraint { "URI = ${inputURI}" }
+					
+					if(forwardEdgeTypes.size() > 0 || reverseEdgeTypes.size() > 0) {
+						
+						ARC_OR {
+							
+							if(forwardEdgeTypes.size() > 0) {
+
+								ARC {
+
+									value direction: "forward"
+									
+									AND {				
+														
+										OR {
+											
+											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+												
+												edge_constraint { c }
+												
+											}
+											
+										}
+									}									
+									
+									if(depth > 1) {
+										
+										ARC {
+											
+											value optional: true
+											
+											value direction: "forward"
+											
+											AND {
+												
+											OR {
+												
+												for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+													
+													edge_constraint { c }
+													
+												}
+												
+											}
+											
+											}
+											
+											
+										}
+										
+										
+									}
+									
+								}
+																
+							}
+							
+							if(reverseEdgeTypes.size() > 0) {
+								
+								ARC {
+									
+									value direction: "reverse"
+												
+									AND {						
+										OR {
+											
+											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+											
+										}
+									
+									}
+																		
+									if(depth > 1) {
+										
+										ARC {
+											
+											value optional: true
+											
+											value direction: "reverse"
+											
+											AND {
+											
+												OR {
+												
+													for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+														
+														edge_constraint { c }
+														
+													}
+													
+												}
+												
+											}
+											
+											
+										}
+										
+										
+									}
+									
+								}
+								
+							}
+							
+							
+							
+						}
+						
+						
+					} else {
+					
+						ARC {
+							
+							value direction: "reverse"
+																
+							
+							if(depth > 1) {
+								
+								ARC {
+									
+									value optional: true
+									
+									value direction: "reverse"
+									
+									
+								}
+								
+								
+							}
+							
+						}
+					
+					
+					}
+					
+					
+				}
+				
+				
+			}
+			
+		}
+		
+		VitalGraphQuery graphQuery = graphQueryObj.toQuery()
+		
+		return graphQuery
 		
 	}
 	

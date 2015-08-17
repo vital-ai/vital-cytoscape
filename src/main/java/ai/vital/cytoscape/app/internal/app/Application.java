@@ -315,9 +315,9 @@ public class Application {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ResultList getConnections(String uri_str, String typeURI) {
+	public ResultList getConnections(String uri_str, String typeURI, int offset, int limit) {
 
-		log.info("Getting connections, URI: {}, typeURI: {}", uri_str, typeURI);
+		log.info("Getting connections, URI: {}, typeURI: {}, offset: {}, limit: {}", new Object[]{uri_str, typeURI, offset, limit});
 		
 		//expansion
 		/*
@@ -407,56 +407,49 @@ public class Application {
 			rClasses.clear();
 		}
 		
-//		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, 0, 1000, fClasses, rClasses);
-		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, fClasses, rClasses);
 		
+		
+		//XXX path query
+//		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
+//		rs.setLimit(-1);
+
 		List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
 		
 		for(String domainSegment : nsList) {
 			
 			try {
 				
-				vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+				//XXX path query
+//				vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+//				
+//				ResultList rlx = VitalSigns.get().query(vpq, nsList);
+//				
+//				filterGraphMatch(rlx, resultsMap);
 				
-				ResultList rlx = VitalSigns.get().query(vpq, nsList);
 				
-				filterGraphMatch(rlx, resultsMap);
-				
-				
-				/*
-				int offset = 0 ;
-				int limit = 1000;
-				
-				vgq.setOffset(limit);
 				vgq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
 				
-				while (offset >= 0) {
+				ResultList rlx = VitalSigns.get().query(vgq, nsList);
 					
-					vgq.setOffset(offset);
-					
-					ResultList rlx = VitalSigns.get().query(vgq, nsList);
-					
-					if(rlx.getResults().size() < limit) {
+				if(rlx.getResults().size() < limit) {
 						
-						offset = -1;
+					offset = -1;
 						
-					} else if(offset + limit >= HARD_LIMIT) {
+				} else if(offset + limit >= HARD_LIMIT) {
 						
-						log.info("Local Query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+					log.info("Local Query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
 						
-						offset = -1;
+					offset = -1;
 						
-					} else {
+				} else {
 						
-						offset += limit;
-						
-					}
-					
-					filterGraphMatch(rlx, resultsMap);
+					offset += limit;
 					
 				}
-				*/
-			
+					
+				filterGraphMatch(rlx, resultsMap);
+					
 			} catch (Exception e) {
 				log.error(e.getLocalizedMessage(), e);
 			}
@@ -470,48 +463,49 @@ public class Application {
 		if(serviceSegments.size() > 0){
 		
 			try {
-	
-				vpq.setSegments(serviceSegments);
-				ResultList rlx = vitalService.query(vpq);
+
+//				XXX path query
+//				vpq.setSegments(serviceSegments);
+//				ResultList rlx = vitalService.query(vpq);
+//				filterGraphMatch(rlx, resultsMap);
 				
-				filterGraphMatch(rlx, resultsMap);
 				
-				/*
-				int offset = 0 ;
-				int limit = 1000;
 				
-				vgq.setOffset(limit);
 				vgq.setSegments(serviceSegments);
 				
-				while (offset >= 0) {
+				ResultList rlx = vitalService.query(vgq);
 					
-					vgq.setOffset(offset);
+				if(rlx.getResults().size() < limit) {
+						
+					offset = -1;
+					rs.setLimit(-1);
+						
+				} else if(offset + limit >= HARD_LIMIT) {
+						
+					log.info("Service query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+						
+					offset = -1;
 					
-					ResultList rlx = vitalService.query(vgq);
-					
-					if(rlx.getResults().size() < limit) {
+					rs.setLimit(-1);
 						
-						offset = -1;
+				} else {
 						
-					} else if(offset + limit >= HARD_LIMIT) {
+					offset += limit;
 						
-						log.info("Service query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
-						
-						offset = -1;
-						
-					} else {
-						
-						offset += limit;
-						
-					}
-					
-					filterGraphMatch(rlx, resultsMap);
+					rs.setLimit(offset);
 					
 				}
-				*/
+					
+				filterGraphMatch(rlx, resultsMap);
+
 			} catch (Exception e) {
 				log.error(e.getLocalizedMessage(), e);
 			}
+			
+		} else {
+			
+			rs.setLimit(offset);
+			
 		}
 		
 
@@ -520,6 +514,7 @@ public class Application {
 			rs.getResults().add(new ResultElement(entry.getValue(), 1D));
 			
 		}
+		
 		
 		return rs;
 		

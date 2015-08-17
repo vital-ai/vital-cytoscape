@@ -498,6 +498,7 @@ public class ExpandNodesTask implements Task {
 			
 			Set<View<CyNode>> allNodeViews = new HashSet<View<CyNode>>();
 			
+			Set<Long> allNodesIDs = new HashSet<Long>();
 	        
 			while (i.hasNext()) {
 				
@@ -537,23 +538,47 @@ public class ExpandNodesTask implements Task {
 						
 					} else {
 						
-						List<GraphObject> objects = new ArrayList<GraphObject>();
 						
-						//get filters and direction from path tab
-						long s = System.currentTimeMillis();
-						ResultList rs_connections = Application.get().getConnections(uri_str, typeURI);
-						for(ResultElement g : rs_connections.getResults()) {
-							objects.add(g.getGraphObject());
+						int offset = 0;
+						
+						int limit = 1000;
+						
+						
+						while(offset >= 0) {
+							
+							List<GraphObject> objects = new ArrayList<GraphObject>();
+							//get filters and direction from path tab
+							long s = System.currentTimeMillis();
+							ResultList rs_connections = Application.get().getConnections(uri_str, typeURI, offset, limit);
+							for(ResultElement g : rs_connections.getResults()) {
+								objects.add(g.getGraphObject());
+							}
+							
+							boolean more = rs_connections.getLimit().intValue() >= 0; 
+							
+							log.info("Results fetch {} - {} time: {}ms, has more ? {}", new Object[]{offset, offset + limit, System.currentTimeMillis() - s, more});
+//							objects = filterNodesAndSegments(rs_relations);
+							
+							s = System.currentTimeMillis();
+							List<View<CyNode>> processed = processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+							for(View<CyNode> p : processed) {
+								if(allNodesIDs.add(p.getSUID())) {
+									allNodeViews.add(p);
+								}
+							}
+							
+							
+							log.info("Results processing time: {}ms", new Object[]{System.currentTimeMillis() - s});
+							
+							if( more ) {
+								offset += limit;
+							} else {
+								offset = -1;
+							}
+							
+							
 						}
 						
-						log.info("Results fetch time: {}ms", System.currentTimeMillis() - s );
-//						objects = filterNodesAndSegments(rs_relations);
-						
-						s = System.currentTimeMillis();
-						List<View<CyNode>> processed = processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
-						log.info("Results processing time: {}ms", System.currentTimeMillis() - s);
-						
-						allNodeViews.addAll(processed);
 						
 						
 					}

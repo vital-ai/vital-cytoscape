@@ -927,7 +927,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 //		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateDivision/1417795451415_913912318", "http://vital.ai/ontology/bloomberg-compliance#CorporateDivision");
 //		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateOrganization/1417795451226_913912317", "http://vital.ai/ontology/bloomberg-compliance#CorporateOrganization");
 		
-		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateStaffMember/1417795624138_913917224", "http://vital.ai/ontology/bloomberg-compliance#CorporateStaffMember");
+		ResultList rl = Application.get().getConnections("http://vital.ai/customer/app/CorporateStaffMember/1417795624138_913917224", "http://vital.ai/ontology/bloomberg-compliance#CorporateStaffMember", 0, 1000);
 		
 		System.out.println(rl.toString());
 		

@@ -202,26 +202,49 @@ class Queries {
 						
 					} else {
 					
-						ARC {
-							
-							value direction: "reverse"
-																
-							
-							if(depth > 1) {
+						ARC_OR {
+
+							ARC {
+
+								value direction: "forward"
 								
-								ARC {
+								if(depth > 1) {
 									
-									value optional: true
-									
-									value direction: "reverse"
+									ARC {
+										
+										value optional: true
+										
+										value direction: "forward"
+											
+											
+									}
 									
 									
 								}
-								
-								
 							}
+														
+							ARC {
+								
+								value direction: "reverse"
+									
+									
+								if(depth > 1) {
+									
+									ARC {
+										
+										value optional: true
+										
+										value direction: "reverse"
+											
+											
+									}
+									
+									
+								}
 							
+							}
 						}
+					
 					
 					
 					}

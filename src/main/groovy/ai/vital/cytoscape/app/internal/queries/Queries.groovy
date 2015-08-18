@@ -72,55 +72,62 @@ class Queries {
 		
 		if(depth > 2) throw new RuntimeException("max depth 2 supported at this moment")
 		
-		def graphQueryObj = builder.query {
+		//split it into n queries
+		
+		def graphQueryObj = null;
+		
+		//both
+		
+		if(forwardEdgeTypes.size() > 0 && reverseEdgeTypes.size() > 0) {
 			
-			GRAPH {
+			
+			graphQueryObj = builder.query {
 				
-				value segments: segments
-				
-				value offset: offset
-				
-				value limit: limit
-				
-				value inlineObjects: true
-				
-				ARC {
+				GRAPH {
 					
-					node_constraint { "URI = ${inputURI}" }
+					value segments: segments
 					
-					if(forwardEdgeTypes.size() > 0 || reverseEdgeTypes.size() > 0) {
+					value offset: offset
+					
+					value limit: limit
+					
+					value inlineObjects: true
+					
+					ARC {
+						
+						node_constraint { "URI = ${inputURI}" }
 						
 						ARC_OR {
 							
-							if(forwardEdgeTypes.size() > 0) {
-
+							if(depth > 1) {
+								
+								//--> -->
 								ARC {
-
+		
 									value direction: "forward"
-									
-									AND {				
-														
+											
+									AND {
+															
 										OR {
-											
+												
 											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
-												
+													
 												edge_constraint { c }
-												
+													
 											}
-											
-										}
-									}									
-									
-									if(depth > 1) {
-										
-										ARC {
-											
-											value optional: true
-											
-											value direction: "forward"
-											
-											AND {
 												
+										}
+										
+									}
+									
+									ARC {
+											
+//										value optional: true
+											
+										value direction: "forward"
+											
+										AND {
+											
 											OR {
 												
 												for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
@@ -129,132 +136,384 @@ class Queries {
 													
 												}
 												
+												
 											}
-											
-											}
-											
 											
 										}
+											
+									}
+									
+								}
+								
+								
+								//--> <--
+								ARC {
+									
+									value direction: "forward"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
 										
+									}
+									
+									ARC {
+										
+//										value optional: true
+										
+										value direction: "reverse"
+											
+										AND {
+											
+											OR {
+												
+												for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+													edge_constraint { c }
+													
+												}
+												
+												
+											}
+											
+										}
 										
 									}
 									
 								}
-																
-							}
-							
-							if(reverseEdgeTypes.size() > 0) {
 								
+								//<-- -->
 								ARC {
-									
-									value direction: "reverse"
-												
-									AND {						
-										OR {
+		
+//									value direction: "reverse"
 											
+									AND {
+															
+										OR {
+												
 											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
 													
 												edge_constraint { c }
 													
 											}
 												
-											
 										}
-									
-									}
-																		
-									if(depth > 1) {
 										
-										ARC {
+									}
+									
+									ARC {
+										
+//										value optional: true
+										
+										value direction: "forward"
 											
-											value optional: true
+										AND {
 											
-											value direction: "reverse"
-											
-											AND {
-											
-												OR {
+											OR {
 												
-													for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
-														
-														edge_constraint { c }
-														
-													}
+												for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+													
+													edge_constraint { c }
 													
 												}
+												
+												
+											}
+											
+										}
+										
+									}
+									
+								}
+								
+								//<-- <--
+								ARC {
+		
+									value direction: "reverse"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
+										
+									}
+									
+									ARC {
+										
+//										value optional: true
+										
+										value direction: "reverse"
+											
+										AND {
+											
+											OR {
+												
+												for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+													edge_constraint { c }
+													
+												}
+												
+												
+											}
+											
+										}
+										
+									}
+									
+								}
+								
+								// -->
+								ARC {
+									
+									value direction: "forward"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
+									}
+								}
+								
+								
+								// <--
+								ARC {
+									
+									value direction: "reverse"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
+										
+									}
+									
+								}
+								
+							} else {
+							
+								ARC {
+								
+									value direction: "forward"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
+									}
+								}
+								
+								ARC {
+									
+									value direction: "reverse"
+											
+									AND {
+															
+										OR {
+												
+											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+													
+												edge_constraint { c }
+													
+											}
+												
+										}
+										
+									}
+									
+								}
+								
+							}
+							
+						}
+						
+					}
+					
+				}
+				
+			}
+			
+		} else if(forwardEdgeTypes.size() > 0) {
+		
+			graphQueryObj = builder.query {
+				
+				GRAPH {
+					
+					value segments: segments
+					
+					value offset: offset
+					
+					value limit: limit
+					
+					value inlineObjects: true
+					
+					ARC {
+						
+						node_constraint { "URI = ${inputURI}" }
+						
+						//foward arc
+						ARC {
+	
+							value direction: "forward"
+									
+							AND {
+													
+								OR {
+										
+									for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+											
+										edge_constraint { c }
+											
+									}
+										
+								}
+								
+							}
+								
+							if(depth > 1) {
+								
+								ARC {
+									
+									value optional: true
+									
+									value direction: "forward"
+										
+									AND {
+										
+										OR {
+											
+											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
+												
+												edge_constraint { c }
 												
 											}
 											
 											
 										}
 										
-										
 									}
 									
 								}
-								
+									
 							}
-							
-							
 							
 						}
-						
-						
-					} else {
-					
-						ARC_OR {
-
-							ARC {
-
-								value direction: "forward"
-								
-								if(depth > 1) {
-									
-									ARC {
-										
-										value optional: true
-										
-										value direction: "forward"
-											
-											
-									}
-									
-									
-								}
-							}
-														
-							ARC {
-								
-								value direction: "reverse"
-									
-									
-								if(depth > 1) {
-									
-									ARC {
-										
-										value optional: true
-										
-										value direction: "reverse"
-											
-											
-									}
-									
-									
-								}
 							
-							}
-						}
-					
-					
-					
 					}
-					
 					
 				}
 				
-				
 			}
 			
+		} else if(reverseEdgeTypes.size() > 0) {
+		
+			graphQueryObj = builder.query {
+				
+				GRAPH {
+					
+					value segments: segments
+					
+					value offset: offset
+					
+					value limit: limit
+					
+					value inlineObjects: true
+					
+					ARC {
+						
+						node_constraint { "URI = ${inputURI}" }
+						
+						//reverse arc
+						ARC {
+
+							value direction: "reverse"
+									
+							AND {
+													
+								OR {
+										
+									for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+											
+										edge_constraint { c }
+											
+									}
+										
+								}
+								
+							}
+							
+							if(depth > 1) {
+								
+								ARC {
+									
+									value optional: true
+									
+									value direction: "reverse"
+										
+									AND {
+										
+										OR {
+											
+											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
+												
+												edge_constraint { c }
+												
+											}
+											
+										}
+										
+									}
+									
+								}
+							
+							}
+							
+						}
+						
+					}
+					
+				}
+				
+			}
+		
+		} else {
+			throw new RuntimeException("No forward/reverse classes for graph query");
 		}
 		
 		VitalGraphQuery graphQuery = graphQueryObj.toQuery()

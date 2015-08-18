@@ -116,8 +116,6 @@ public class ExpandNodesTask implements Task {
 			}
 		}
 		
-		VisualStyleUtils.applyVisualStyle(VitalAICytoscapePlugin.getCurrentNetworkView());
-		
 	}
 
 	public void setTaskMonitor(TaskMonitor arg0)
@@ -602,7 +600,6 @@ public class ExpandNodesTask implements Task {
 			taskMonitor.setStatusMessage("Done!");
 			
 			
-//			Utils.applyVisualStyle(cyNet);
 			VisualStyleUtils.applyVisualStyle(myView);
 //			Utils.getKamadaKawaiLayoutAlgorithm().unlockAllNodes();
 			

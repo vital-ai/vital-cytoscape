@@ -36,9 +36,7 @@ public class VisualStyleUtils {
 	
 	public static void applyVisualStyle(CyNetworkView networkView) {
 		
-		if(style == null) {
-			style =  createStyle();
-		}
+		VisualStyle style = createStyle();
 		
 		style.apply(networkView);
 		networkView.updateView();
@@ -47,22 +45,36 @@ public class VisualStyleUtils {
 
 	private static VisualStyle createStyle() {
 
-		VisualStyle s = visualStyleFactoryServiceRef.createVisualStyle("Vital visual style");
-		
-		s = vmmServiceRef.getDefaultVisualStyle();
-		
-		//Use pass-through mapping
-		String ctrAttrName1 = "SUID";
-		
+		if(style == null) {
+			
+		}
+		synchronized(VisualStyleUtils.class) {
+
+			if(style == null) {
+				
+				VisualStyle s = visualStyleFactoryServiceRef.createVisualStyle("Vital visual style");
+				
+				s = vmmServiceRef.getDefaultVisualStyle();
+				
+				//Use pass-through mapping
+				String ctrAttrName1 = "SUID";
+				
 //		PassthroughMapping pMapping = (PassthroughMapping) vmfFactoryPassthrough.createVisualMappingFunction(ctrAttrName1, String.class, attrForTest, BasicVisualLexicon.NODE_LABEL);
 //		s.addVisualMappingFunction(pMapping);                        
- 
-		s.setDefaultValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.ARROW);
-		
-		// Add the new style to the VisualMappingManager
+				
+				s.setDefaultValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.ARROW);
+				
+				// Add the new style to the VisualMappingManager
 //		vmmServiceRef.addVisualStyle(s);
+
+				style = s;
+				
+			}
+			
+		}
 		
-		return s;
+		return style;
+		
 	}
 	
 }

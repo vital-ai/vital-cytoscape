@@ -15,6 +15,9 @@ import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.model.events.NetworkViewAddedEvent;
+import org.cytoscape.view.model.events.NetworkViewAddedListener;
+import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
@@ -61,6 +64,9 @@ public class CyActivator extends AbstractCyActivator {
 		
 		registerService(context, nl, NetworkAddedListener.class, new Properties());
 		registerService(context, nl, NetworkDestroyedListener.class, new Properties());
+		
+		registerService(context, nl, NetworkViewAddedListener.class, new Properties());
+		registerService(context, nl, NetworkViewDestroyedListener.class, new Properties());
 		
 		
 		CyEventHelper helper = getService(context, CyEventHelper.class);

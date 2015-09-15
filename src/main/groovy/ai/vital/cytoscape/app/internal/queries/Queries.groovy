@@ -1,5 +1,14 @@
 package ai.vital.cytoscape.app.internal.queries
 
+import ai.vital.vitalsigns.model.property.BooleanProperty;
+import ai.vital.vitalsigns.model.property.DateProperty;
+import ai.vital.vitalsigns.model.property.DoubleProperty;
+import ai.vital.vitalsigns.model.property.FloatProperty;
+import ai.vital.vitalsigns.model.property.GeoLocationProperty;
+import ai.vital.vitalsigns.model.property.IProperty
+import ai.vital.vitalsigns.model.property.IntegerProperty;
+import ai.vital.vitalsigns.model.property.LongProperty;
+import ai.vital.vitalsigns.model.property.StringProperty;
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.query.Utils;
 import ai.vital.query.querybuilder.VitalBuilder
@@ -9,7 +18,9 @@ import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.model.VITAL_Edge;
+import ai.vital.vitalsigns.properties.PropertyMetadata;
 import ai.vital.vitalsigns.properties.PropertyTrait;
+import ai.vital.vitalsigns.rdf.RDFDate;
 import ai.vital.vitalsigns.rdf.RDFUtils;
 import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion
 import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion.Comparator
@@ -19,50 +30,150 @@ class Queries {
 
 	static def builder = new VitalBuilder()
 	
-	public static VitalSelectQuery searchQuery(List<VitalSegment> segmentsList, String searchString, Integer offset, Integer limit, String propertyURI, boolean orNotAnd) {
+	public static VitalSelectQuery searchQuery(List<VitalSegment> segmentsList, String searchString, Integer offset, Integer limit, PropertyMetadata pm, boolean orNotAnd) {
 		
-		String pname = RDFUtils.getPropertyShortName(propertyURI);
+		String propertyURI = pm.getURI()
 		
-		VitalSelectQuery selectQuery = builder.query {
-			
-			SELECT {
+		VitalSelectQuery selectQuery = null
+		
+		Class<? extends IProperty> bc = pm.getBaseClass()
+		
+		if(bc.equals(StringProperty.class)) {
+		
+			selectQuery = builder.query {
 				
-				value segments: segmentsList
-				
-				value limit: limit
-				
-				value offset: offset
-				
-			
-				OR {
+				SELECT {
 					
-					node_constraint { PropertyConstraint(propertyURI).equalTo_i(searchString) }
+					value segments: segmentsList
 					
-					orNotAnd ? OR {
+					value limit: limit
+					
+					value offset: offset
+					
+				
+					OR {
 						
-						for(String kw : searchString.split("\\s+")) {
+						node_constraint { PropertyConstraint(propertyURI).equalTo_i(searchString) }
+						
+						orNotAnd ? OR {
 							
-							node_constraint { ai.vital.query.Utils.PropertyConstraint(propertyURI).contains_i(kw) }
+							for(String kw : searchString.split("\\s+")) {
+								
+								node_constraint { ai.vital.query.Utils.PropertyConstraint(propertyURI).contains_i(kw) }
+								
+							}
 							
+						} : AND {
+						
+							for(String kw : searchString.split("\\s+")) {
+						
+								node_constraint { ai.vital.query.Utils.PropertyConstraint(propertyURI).contains_i(kw) }
+							}
+						
 						}
 						
-					} : AND {
-					
-						for(String kw : searchString.split("\\s+")) {
-					
-							node_constraint { ai.vital.query.Utils.PropertyConstraint(propertyURI).contains_i(kw) }
-						}
-					
+						
+						
 					}
 					
 					
-					
+				}
+				
+			}.toQuery()
+				
+		} else {
+		
+		
+			Object val = null
+			
+			if( bc.equals(DoubleProperty.class)) {
+			
+				try {
+					val = Double.parseDouble(searchString.trim())
+				} catch(Exception e) {
+					throw new Exception("Couldn't convert string: " + searchString + " into double - property " + propertyURI + " is a double one" )
+				}
+			
+			} else if(bc.equals(FloatProperty.class)) {
+			
+				
+				try {
+					val = Float.parseFloat(searchString.trim())
+				} catch(Exception e) {
+					throw new Exception("Couldn't convert string: " + searchString + " into float - property " + propertyURI + " is a float one" )
+				}
+			
+			} else if( bc.equals(IntegerProperty.class) ) {
+			
+				try {
+					val = Integer.parseInt(searchString.trim())
+				} catch(Exception e) {
+					throw new Exception("Couldn't convert string: " + searchString + " into integer - property " + propertyURI + " is an integer one" )
 				}	
 				
-				
+			} else if( bc.equals(LongProperty.class)) {
+			
+				try {
+					val = Long.parseLong(searchString.trim())
+				} catch(Exception e) {
+					throw new Exception("Couldn't convert string: " + searchString + " into long integer - property " + propertyURI + " is a long one" )
+				}
+					
+			} else if( bc.equals(DateProperty.class) ) {
+			
+				//parse time
+				try {
+					RDFDate.fromXSDString(searchString.trim())
+				} catch(Exception e) {
+					throw new Exception("Couldn't convert string: " + searchString + " into date - property " + propertyURI + " is a date one, error: " + e.getLocalizedMessage())
+				}
+			
+			} else if( bc.equals(URIProperty.class) ) {
+			
+				val = URIProperty.withString(searchString)
+			
+			} else if( bc.equals(BooleanProperty.class)) {
+			
+				if(searchString.equalsIgnoreCase("true") ) {
+					val = true
+				} else if(searchString.equals("false")) {
+					val = false
+				} else {
+					throw new RuntimeException("Couldn't convert string: " + searchString + " into boolean - property " + propertyURI + " is a boolean one")
+				}
+			
+			} else {
+				throw new RuntimeException("Property unsupported: " + propertyURI + ", type: " + bc.getSimpleName()) 
 			}
 			
-		}.toQuery()
+			
+			
+			selectQuery = builder.query {
+				
+				SELECT {
+					
+					value segments: segmentsList
+					
+					value limit: limit
+					
+					value offset: offset
+					
+				
+					AND {
+						
+						node_constraint { PropertyConstraint(propertyURI).equalTo(val) }
+						
+					}
+					
+					
+				}
+				
+			}.toQuery()
+				
+		
+		}
+		
+
 		
 		return selectQuery
 		

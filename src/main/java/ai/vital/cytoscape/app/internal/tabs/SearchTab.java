@@ -12,7 +12,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -43,13 +42,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntModel;
-import com.hp.hpl.jena.ontology.OntProperty;
-import com.hp.hpl.jena.ontology.OntResource;
-import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-import com.hp.hpl.jena.vocabulary.XSD;
-
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 import ai.vital.cytoscape.app.internal.dnd.ListElementWrapper;
@@ -59,29 +51,21 @@ import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.cytoscape.app.internal.queries.Queries;
-import ai.vital.domain.ontology.VitalOntology;
-import ai.vital.vitalsigns.classes.ClassMetadata;
-import ai.vital.vitalsigns.model.property.IProperty;
-import ai.vital.vitalsigns.model.property.StringProperty;
-import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
-import ai.vital.vitalservice.query.QueryContainerType;
-import ai.vital.vitalservice.query.VitalGraphCriteriaContainer;
-import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion;
-import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion.Comparator;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
+import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 import ai.vital.vitalsigns.properties.PropertiesRegistry;
 import ai.vital.vitalsigns.properties.PropertyMetadata;
-import ai.vital.vitalsigns.rdf.RDFUtils;
 
 public class SearchTab extends JPanel implements ListSelectionListener,
 		ItemListener {
@@ -191,6 +175,15 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 
 	}
 
+//	final static Set<Class<? extends IProperty>> searchableClasses = new HashSet<Class<? extends IProperty>>(Arrays.asList(
+//		(Class<? extends IProperty>) StringProperty.class,
+//		URIProperty.class,
+//		DoubleProperty.class,
+//		IntegerProperty.class,
+//		FloatProperty.class,
+//		LongProperty.class
+//	));
+	
 	private void initPropertiesBox2() {
 		
 		List<PropertyItem> pItems = new ArrayList<PropertyItem>();
@@ -211,9 +204,10 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				
 				if(pURIs.contains( pm.getURI() ) ) continue;
 				
-				if( ! StringProperty.class.equals( pm.getBaseClass() ) ) continue;
+//				if(searchableClasses.contains(pm.getBaseClass())) continue;
+//				if( ! StringProperty.class.equals( pm.getBaseClass() ) ) continue;
 				
-				pItems.add(new PropertyItem(pm.getShortName(), pm.getURI()));
+				pItems.add(new PropertyItem(pm.getShortName(), pm.getURI(), pm));
 				
 				pURIs.add(pm.getURI());
 				
@@ -246,84 +240,6 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		
 	}
 	
-	@Deprecated
-	private void initProprtiesBox() {
-
-		OntModel ontModel = VitalSigns.get().getOntologyModel();
-		
-		OntClass nodeClass = ontModel.getOntClass(VitalCoreOntology.VITAL_Node.getURI());
-		
-		List<OntClass> roots = Arrays.asList(nodeClass);
-		
-		//collect all properties 
-		Set<String> pURIs = new HashSet<String>();
-		
-		List<PropertyItem> pItems = new ArrayList<PropertyItem>();
-		
-		while(roots.size() > 0) {
-			
-			List<OntClass> newRoots = new ArrayList<OntClass>();
-			
-			for(OntClass c : roots) {
-				
-				for( ExtendedIterator<OntProperty> dps = c.listDeclaredProperties(true); dps.hasNext(); ) {
-
-					OntProperty property = dps.next();
-			
-					OntResource domain = property.getDomain();
-					
-					if(domain == null) continue;
-					
-					if(!property.isURIResource()) continue;
-					
-					OntResource range = property.getRange();
-					
-					if(range != null && range.isURIResource() && range.getURI().equals(XSD.xstring.getURI())) {
-						if(pURIs.add(property.getURI())) {
-							String propertyName = RDFUtils.getPropertyShortName(property.getURI());
-							pItems.add(new PropertyItem(propertyName, property.getURI()));
-						}
-					}
-					
-				}
-				
-				for( ExtendedIterator<OntClass> subclasses= c.listSubClasses(true); subclasses.hasNext(); ) {
-					newRoots.add(subclasses.next());
-				}
-				
-			}
-			
-			roots = newRoots;
-			
-		}
-
-		Collections.sort(pItems, new java.util.Comparator<PropertyItem>(){
-
-			@Override
-			public int compare(PropertyItem arg0, PropertyItem arg1) {
-				int c = arg0.propertyName.compareToIgnoreCase(arg1.propertyName);
-				if(c != 0) return c;
-				return arg0.propertyURI.compareToIgnoreCase(arg1.propertyURI);
-			}});
-		
-		
-		PropertyItem nameItem = null;
-		
-		for(PropertyItem p : pItems) {
-			propertiesBox.addItem(p);
-			if((VitalCoreOntology.NS + "hasName").equals(p.propertyURI)) {
-				nameItem = p;
-			}
-		}
-		
-		if(nameItem != null) {
-			propertiesBox.setSelectedItem(nameItem);
-		}
-		
-		//list subclasses
-		
-	}
-
 	private JPanel createPanelNorth() {
 		int hspace = 5;
 		JPanel northPanel = new JPanel();
@@ -538,7 +454,20 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 				String searchString = textField.getText().trim();
 				String propertyURI = ((PropertyItem)propertiesBox.getSelectedItem()).propertyURI;
 				
-				VitalSelectQuery sq = Queries.searchQuery(segments, searchString, 0, 1000, propertyURI, orRadioButton.isSelected());
+				PropertyMetadata pm = VitalSigns.get().getPropertiesRegistry().getProperty(propertyURI);
+				if(pm == null) {
+					JOptionPane.showMessageDialog(null, "Property not found: " + propertyURI, "Property not found", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				VitalSelectQuery sq = null;
+				
+				try {
+					sq = Queries.searchQuery(segments, searchString, 0, 1000, pm, orRadioButton.isSelected());
+				} catch(Exception ex) {
+					JOptionPane.showMessageDialog(null, ex.getLocalizedMessage(), "Query generation error", JOptionPane.ERROR_MESSAGE);
+					return;					
+				}
 				
 				/*
 				VitalSelectQuery sq = VitalSelectQuery.createInstance();
@@ -938,18 +867,25 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		private String propertyName;
 		
 		private String propertyURI;
+
+		private PropertyMetadata pm;
 		
-		public PropertyItem(String propertyName, String propertyURI) {
+		public PropertyItem(String propertyName, String propertyURI, PropertyMetadata pm) {
 			super();
 			this.propertyName = propertyName;
 			this.propertyURI = propertyURI;
+			this.pm = pm;
 		}
 
 
 
 		@Override
 		public String toString() {
-			return propertyName + "   [" + propertyURI + "]";
+			String type = pm.getBaseClass().getSimpleName();
+			if(type.endsWith("Property")) {
+				type = type.substring(0, type.length() - "Property".length());
+			}
+			return propertyName + "   [" + propertyURI + "] (" + type + ")";
 		}
 		
 	}

@@ -334,6 +334,8 @@ public class Application {
 		
 		if(direction == null) direction = ExpansionDirection.Outgoing;
 		
+		List<VitalSegment> selectedSegments = VitalAICytoscapePlugin.getPathSegments();
+		
 		Integer depth = VitalAICytoscapePlugin.getDepth();
 		if(depth == null) depth = 1;
 		
@@ -385,11 +387,11 @@ public class Application {
 //			return rs;
 		}
 
-		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
-		try {
-			serviceSegments = getServiceSegments();
-		} catch (Exception e1) {
-		}
+//		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
+//		try {
+//			serviceSegments = getServiceSegments();
+//		} catch (Exception e1) {
+//		}
 		
 		
 		
@@ -460,7 +462,9 @@ public class Application {
 			
 //		}
 		
-		if(serviceSegments.size() > 0){
+		log.info("Selected segments count: " + selectedSegments.size());
+		
+		if(selectedSegments.size() > 0){
 		
 			try {
 
@@ -469,12 +473,12 @@ public class Application {
 //				ResultList rlx = vitalService.query(vpq);
 //				filterGraphMatch(rlx, resultsMap);
 				
-				
-				
-				vgq.setSegments(serviceSegments);
+				vgq.setSegments(selectedSegments);
 				
 				ResultList rlx = vitalService.query(vgq);
-					
+				
+				log.info("GraphQuery status: {}", rlx.getStatus().toString());
+				
 				if(rlx.getResults().size() < limit) {
 						
 					offset = -1;

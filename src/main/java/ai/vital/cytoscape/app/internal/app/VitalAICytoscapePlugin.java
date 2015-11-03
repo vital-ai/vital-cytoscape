@@ -5,6 +5,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import javax.swing.JLabel;
@@ -551,5 +553,15 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 	public static Integer getDepth() {
 		if(singleton == null || singleton.pathsTab == null) return 1;
 		return singleton.pathsTab.getDepth();
+	}
+
+
+
+	public static List<VitalSegment> getPathSegments() {
+		if(singleton == null || singleton.pathsTab == null) {
+			List<VitalSegment> emptyList = Collections.emptyList();
+			return emptyList;
+		}
+		return singleton.pathsTab.getSegmentsPanel().getSelectedSegments();
 	}
 }

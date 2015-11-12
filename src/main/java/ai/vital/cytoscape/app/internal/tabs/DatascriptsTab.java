@@ -56,14 +56,13 @@ import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
 import ai.vital.cytoscape.app.internal.panels.NetworkListPanel;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.DatascriptInfo;
-import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalservice.VitalStatus;
-import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class DatascriptsTab extends JPanel {
@@ -431,9 +430,8 @@ public class DatascriptsTab extends JPanel {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
-		
-		Application.initForTests(VitalServiceFactory.getVitalService());
+//		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
+//		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		DatascriptsTab panel = new DatascriptsTab();
 		

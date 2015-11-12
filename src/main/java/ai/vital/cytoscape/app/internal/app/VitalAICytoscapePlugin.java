@@ -35,7 +35,7 @@ import ai.vital.cytoscape.app.internal.tabs.PathsTab;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.cytoscape.app.internal.tabs.SearchTab;
 import ai.vital.vitalservice.EndpointType;
-import ai.vital.vitalservice.segment.VitalSegment;
+import ai.vital.vitalsigns.model.VitalSegment;
 
 public class VitalAICytoscapePlugin extends Thread implements LoginListener, PropertyChangeListener {
 

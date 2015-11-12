@@ -16,8 +16,8 @@ import ai.vital.vitalservice.query.VitalGraphQuery;
 import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.model.VITAL_Edge;
+import ai.vital.vitalsigns.model.VitalSegment
 import ai.vital.vitalsigns.properties.PropertyMetadata;
 import ai.vital.vitalsigns.properties.PropertyTrait;
 import ai.vital.vitalsigns.rdf.RDFDate;

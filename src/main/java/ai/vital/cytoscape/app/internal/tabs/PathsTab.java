@@ -178,6 +178,7 @@ public class PathsTab extends JPanel {
 		return segmentsPanel;
 	}
 	
+	/*
 	public static void main(String[] args) throws VitalServiceException, VitalServiceUnimplementedException {
 		
 		JFrame frame = new JFrame();
@@ -204,6 +205,7 @@ public class PathsTab extends JPanel {
 //		System.out.println(rl.toString());
 		
 	}
+	*/
 
 	public static enum ExpansionDirection {
 		Both,

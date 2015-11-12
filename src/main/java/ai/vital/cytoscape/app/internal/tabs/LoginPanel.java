@@ -161,7 +161,8 @@ public class LoginPanel extends JPanel  implements LoginListener {
 					public void run() {
 						
 						try {
-							Application.get().login(loginBox.getText(), String.valueOf(passwdBox.getPassword()),url);
+							throw new RuntimeException("Reconnect it!");
+//							Application.get().login(loginBox.getText(), String.valueOf(passwdBox.getPassword()),url);
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

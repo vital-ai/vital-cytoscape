@@ -32,7 +32,12 @@ import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.LoginListener;
 import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.VitalService;
+import ai.vital.vitalservice.auth.VitalAuthKeyValidation;
+import ai.vital.vitalservice.auth.VitalAuthKeyValidation.VitalAuthKeyValidationException;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
+import ai.vital.vitalsigns.model.VitalApp;
+import ai.vital.vitalsigns.model.VitalServiceKey;
+import ai.vital.vitalsigns.model.properties.Property_hasKey;
 
 
 public class ServicePanel extends JPanel implements LoginListener, ActionListener {
@@ -85,11 +90,16 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 	private JLabel URLLabel = new JLabel("URL:");
 	private JTextField URLField = new JTextField();
 	
+	private JLabel keyLabel = new JLabel("Service Key:");
+	private JTextField keyField = new JTextField();
+	
 	private EndpointType endpointType;
 
 	private Config servicesConfig;
 
 	private String selectedProfile; 
+	
+	private JPanel keyPanel = new JPanel();
 	
 	public ServicePanel() {
 		super();
@@ -161,6 +171,15 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 		
 		add(endpointURLPanel);
 
+		keyPanel.setLayout(new BorderLayout(5,2));
+		keyPanel.setBorder(new EmptyBorder(2,2,2,2));
+		
+		keyPanel.add(keyLabel, BorderLayout.WEST);
+		keyPanel.add(keyField, BorderLayout.CENTER);
+		
+		add(keyPanel);
+		
+		
 
 		if(endpointType == EndpointType.VITALPRIME) {
 			
@@ -238,13 +257,29 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 				
 				connectButton.setEnabled(false);
 				serviceProfiles.setEnabled(false);
+				keyField.setEnabled(false);
 				message.setText("logging in ...");
 				final String url = URLField.getText();
+				String key = null;
 				if(endpointType == EndpointType.VITALPRIME) {
-					log.info("Connecting to Vital Endpoint at: " + url);
+					key = keyField.getText();
+					log.info("Connecting to Vital Endpoint at: " + url + " key: " + key);
+					try {
+						VitalAuthKeyValidation.validateKey(key);
+					} catch (VitalAuthKeyValidationException e1) {
+						message.setText("");
+						connectButton.setEnabled(true);
+						serviceProfiles.setEnabled(true);
+						keyField.setEnabled(true);
+						JOptionPane.showMessageDialog(null, "Key validation error: " + e1.getLocalizedMessage(), "Input key validation error", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
 				} else {
-					log.info("Connecting to Vital Endpoint type: " + endpointType.getName());
+					key = "aaaa-aaaa-aaaa";
+					log.info("Connecting to Vital Endpoint type: " + endpointType.getName() + ", mock key: " + key);
 				}
+				
+				final String finalKey = key;
 				
 				TimerTask task = new TimerTask(){
 
@@ -255,21 +290,26 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 							
 							if(selectedProfile == null) throw new RuntimeException("No profile selected!");
 							
-							VitalServiceFactory.closeVitalService();
+							for(VitalService service : VitalServiceFactory.listOpenServices()) {
+								service.close();
+							}
 							
-							VitalServiceFactory.setServiceProfile(selectedProfile);
-							
-							VitalService service = VitalServiceFactory.getVitalService();
+							//TODO
+							VitalServiceKey keyObject = new VitalServiceKey();
+							keyObject.generateURI((VitalApp)null);
+							keyObject.set(Property_hasKey.class, finalKey);
+							VitalService service = VitalServiceFactory.openService(keyObject, selectedProfile);
 							
 							Application.get().login(service);
+							
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
-							log.error(e.getLocalizedMessage());
+							log.error(e.getLocalizedMessage(), e);
 							message.setText("");
 							JOptionPane.showMessageDialog(null, "Connection error: " + e.getLocalizedMessage(), "Connection error", JOptionPane.ERROR_MESSAGE);
 							connectButton.setEnabled(true);
-							
 							serviceProfiles.setEnabled(true);
+							keyField.setEnabled(true);
 							
 						}
 						
@@ -339,6 +379,8 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 		
 		serviceProfiles.setEnabled(false);
 		
+		keyField.setEnabled(false);
+		
 	}
 
 	public void onLogout() {
@@ -361,7 +403,11 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 		
 		message.setText("Logged out");
 		
+		URLField.setEnabled(true);
+		
 		serviceProfiles.setEnabled(true);
+		
+		keyField.setEnabled(true);
 		
 		
 		
@@ -390,10 +436,16 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 				endpointURLLabel.setText("URL:");
 				endpointURLValue.setText(profileConfig.getString("VitalPrime.endpointURL"));
 				
+				keyPanel.setVisible(true);
+				keyField.setText("");
+				
 			} else {
 				
 				endpointURLLabel.setText(" ");
 				endpointURLValue.setText(" ");
+				
+				keyPanel.setVisible(false);
+				keyField.setText("");
 			}
 			
 		} catch(Exception e) {

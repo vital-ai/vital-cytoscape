@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
-import ai.vital.domain.Edge_hasCategory;
 import ai.vital.domain.Job;
 import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
@@ -31,14 +30,11 @@ import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
-import ai.vital.vitalservice.model.App;
-import ai.vital.vitalservice.model.Organization;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalGraphQuery;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.block.CompactStringSerializer;
 import ai.vital.vitalsigns.classes.ClassMetadata;
@@ -48,6 +44,7 @@ import ai.vital.vitalsigns.model.GraphMatch;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.VitalSegment;
 import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
@@ -200,82 +197,85 @@ public class Application {
 		
 	}
 
-	public void login(String username, String password, String url) throws Exception {
+//	public void login(String username, String password, String url) throws Exception {
+//
+//		log.debug("Logging in...");
+//		
+//		for(VitalService service : VitalServiceFactory.listOpenServices()) {
+//			service.close();
+//		}
+//		
+//		if(endpointType == EndpointType.VITALPRIME) {
+//			
+//			
+//			String customerID = serviceConfig.getString("customerID");
+//			String appID = serviceConfig.getString("appID");
+//			
+//			App app = new App();
+//			app.setID(appID);
+//			app.setOrganizationID(customerID);
+//			
+//			Organization organization = new Organization();
+//			organization.setID(customerID);
+//			
+//			new URL(url);
+//			
+////			VitalServicePrimeConfigCreator creator = new VitalServicePrimeConfigCreator();
+//			VitalServicePrimeConfig cfg = new VitalServicePrimeConfig();
+//			
+//			cfg.setApp(app);
+//			cfg.setOrganization(organization);
+//			cfg.endpointURL = url;
+//			
+//			VitalService _service = VitalServiceFactory.createVitalService(cfg);
+//			
+//			VitalStatus status = _service.ping();
+//			
+//			if(status.getStatus() != VitalStatus.Status.ok) {
+//				throw new Exception("Ping failed: " + status.getMessage());
+//			}
+//			
+//			vitalService = _service;
+//			
+////			creator.setCustomConfigProperties(cfg, serviceConfig);
+//			
+//			
+//		} else {
+//			
+//			//just create the service with factory
+//			
+//			vitalService = VitalServiceFactory.getVitalService();
+//			
+//		}
+//		
+//		/*
+//		VitalService.setEndpoint(url);
+//		
+//		Map<String, Object> params = new HashMap<String, Object>();
+//		params.put("accountType", "local");
+//		params.put("segment", "modernist");
+//		params.put("username", username);
+//		params.put("password", password);
+//		
+//		ResultSet rs = VitalService.getInstance().callFunction("AuthenticateUser.groovy", params);
+//		if(!rs.isOk()) throw new Exception(rs.getErrorMessage());
+//		*/
+//		//successfully authenticated?
+//		
+//		/*
+//		o("Testing expansion...");
+//		
+//		ResultList expanded = getConnections("http://uri.vital.ai/wordnet/NounSynsetNode_1396611318625_1016512");
+//		
+//		for(ResultElement el : expanded.getResults()) {
+//			log.debug(el.getGraphObject());
+//		}
+//		*/
+//		
+//		notifyListenersOfLoginEvent();
+//		
+//	}
 
-		log.debug("Logging in...");
-		
-		VitalServiceFactory.closeVitalService();
-		
-		if(endpointType == EndpointType.VITALPRIME) {
-			
-			
-			String customerID = serviceConfig.getString("customerID");
-			String appID = serviceConfig.getString("appID");
-			
-			App app = new App();
-			app.setID(appID);
-			app.setOrganizationID(customerID);
-			
-			Organization organization = new Organization();
-			organization.setID(customerID);
-			
-			new URL(url);
-			
-//			VitalServicePrimeConfigCreator creator = new VitalServicePrimeConfigCreator();
-			VitalServicePrimeConfig cfg = new VitalServicePrimeConfig();
-			
-			cfg.setApp(app);
-			cfg.setOrganization(organization);
-			cfg.endpointURL = url;
-			
-			VitalService _service = VitalServiceFactory.createVitalService(cfg);
-			
-			VitalStatus status = _service.ping();
-			
-			if(status.getStatus() != VitalStatus.Status.ok) {
-				throw new Exception("Ping failed: " + status.getMessage());
-			}
-			
-			vitalService = _service;
-			
-//			creator.setCustomConfigProperties(cfg, serviceConfig);
-			
-			
-		} else {
-			
-			//just create the service with factory
-			
-			vitalService = VitalServiceFactory.getVitalService();
-			
-		}
-		
-		/*
-		VitalService.setEndpoint(url);
-		
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("accountType", "local");
-		params.put("segment", "modernist");
-		params.put("username", username);
-		params.put("password", password);
-		
-		ResultSet rs = VitalService.getInstance().callFunction("AuthenticateUser.groovy", params);
-		if(!rs.isOk()) throw new Exception(rs.getErrorMessage());
-		*/
-		//successfully authenticated?
-		
-		/*
-		o("Testing expansion...");
-		
-		ResultList expanded = getConnections("http://uri.vital.ai/wordnet/NounSynsetNode_1396611318625_1016512");
-		
-		for(ResultElement el : expanded.getResults()) {
-			log.debug(el.getGraphObject());
-		}
-		*/
-		
-		notifyListenersOfLoginEvent();
-		
-	}
 
 	public static interface LoginListener {
 		
@@ -302,6 +302,8 @@ public class Application {
 	public void logout() {
 
 		this.vitalService = null;
+		//reset hierarchy root
+		this.root = new HierarchyNode();
 		notifyListenersOfLogoutEvent();
 		
 	}
@@ -575,11 +577,11 @@ public class Application {
 		
 	}
 
-	public VitalSegment getWordnetSegment() {
-		VitalSegment s1 = new VitalSegment();
-		s1.setID("wordnet");
-		return s1;
-	}
+//	public VitalSegment getWordnetSegment() {
+//		VitalSegment s1 = new VitalSegment();
+//		s1.setID("wordnet");
+//		return s1;
+//	}
 
 	public List<VitalSegment> getServiceSegments() throws VitalServiceException, VitalServiceUnimplementedException {
 		return vitalService.listSegments();
@@ -782,7 +784,11 @@ public class Application {
 			
 			ClassMetadata cm = VitalSigns.get().getClassesRegistry().getClass(u);
 			
-			if(cm == null) throw new Exception("Class not found: " + gname + " uri: " + u);
+			if(cm == null) {
+				log.warn("Class not found: " + gname + " uri: " + u);
+				continue;
+//				throw new Exception("Class not found: " + gname + " uri: " + u);
+			}
 			
 			Class<? extends GraphObject> cls = cm.getClazz();
 			child.cls = cls;

@@ -57,11 +57,11 @@ import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.classes.ClassMetadata;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.VitalSegment;
 import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 import ai.vital.vitalsigns.properties.PropertiesRegistry;
@@ -822,6 +822,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 	
 	
 
+	/*
 	public static void main(String[] args) throws VitalServiceException, VitalServiceUnimplementedException {
 		
 		JFrame frame = new JFrame();
@@ -861,6 +862,7 @@ public class SearchTab extends JPanel implements ListSelectionListener,
 		System.out.println(rl.toString());
 		
 	}
+	*/
 
 	public static class PropertyItem {
 		

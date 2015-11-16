@@ -1,18 +1,22 @@
 package ai.vital.cytoscape.app.internal.queries
 
-import ai.vital.domain.NounSynsetNode;
 import ai.vital.domain.ontology.VitalOntology;
 import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.meta.PathElement;
+import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge
+import ai.vital.vitalsigns.model.VitalApp
+import ai.vital.vitalsigns.model.VitalSegment;
+import ai.vital.vitalsigns.model.VitalServiceKey;
+import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 import junit.framework.TestCase
+
 
 class QueriesTest extends TestCase {
 
@@ -34,9 +38,9 @@ class QueriesTest extends TestCase {
 		
 		VitalSelectQuery q = Queries.searchQuery([VitalSegment.withId("wordnet")], "apple two", 0, 1000, VitalCoreOntology.NS + "hasName", true)
 		
-		VitalServiceFactory.setServiceProfile("default")
-		
-		VitalService service = VitalServiceFactory.getVitalService();
+		VitalServiceKey sk = new VitalServiceKey().generateURI((VitalApp) null)
+		sk.key = 'skey-skey-skey'
+		VitalService service = VitalServiceFactory.openService(sk)
 		
 		ResultList rl = service.query(q);
 		
@@ -48,14 +52,19 @@ class QueriesTest extends TestCase {
 	public static void _testConnectionsQuery() {
 		
 		VitalSigns vs = VitalSigns.get()
+
+		VitalServiceKey sk = new VitalServiceKey().generateURI((VitalApp) null)
+		sk.key = 'skey-skey-skey'
+		VitalService service = VitalServiceFactory.openService(sk)
+
 		
+		Class<? extends GraphObject> nounSynsetNodeClass = VitalSigns.get().getClass(URIProperty.withString('http://vital.ai/ontology/vital-wordnet#NounSynsetNode'))
+		if(nounSynsetNodeClass == null) {
+			throw new RuntimeException("vital-nlp apparently not loaded, http://vital.ai/ontology/vital-wordnet#NounSynsetNode class not found")
+		}
 		
-		VitalServiceFactory.setServiceProfile("default")
-		
-		VitalService service = VitalServiceFactory.getVitalService();
-		
-		List<List<PathElement>> fPaths = vs.getClassesRegistry().getPaths(NounSynsetNode.class, true);
-		List<List<PathElement>> rPaths = vs.getClassesRegistry().getPaths(NounSynsetNode.class, true);
+		List<List<PathElement>> fPaths = vs.getClassesRegistry().getPaths(nounSynsetNodeClass, true);
+		List<List<PathElement>> rPaths = vs.getClassesRegistry().getPaths(nounSynsetNodeClass, true);
 		
 		List<Class<? extends VITAL_Edge>> fC = []
 		for(List<PathElement> p : fPaths) {

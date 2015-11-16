@@ -133,6 +133,14 @@
                   
                   <include>com.google.code.externalsortinginjava:*</include>
                   
+                  
+                  <!-- vitalservice dependencies -->
+                  <include>org.apache.commons:commons-dbcp2:*</include>
+                  <include>org.apache.commons:commons-pool2:*</include>
+                  <include>net.sf.jsqlparser:jsqlparser:*</include>
+                  <include>mysql:mysql-connector-java:*</include>
+                  <include>org.postgresql:postgresql:*</include>
+                  
                 </includes>
                 
               </artifactSet>

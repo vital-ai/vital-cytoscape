@@ -5,14 +5,14 @@
 		<bundle.symbolicName>ai.vital.cytoscape.app</bundle.symbolicName>
 		<bundle.namespace>ai.vital.cytoscape.app</bundle.namespace>
 		
-		<vital.version>0.2.300</vital.version>
+		<vital.version>0.2.301</vital.version>
 		
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>vital-ai</groupId>
 	<artifactId>vital-cytoscape</artifactId>
-	<version>0.2.300</version>
+	<version>0.2.301</version>
 
 	<name>${bundle.symbolicName}</name>
 	
@@ -140,7 +140,7 @@
                   <include>net.sf.jsqlparser:jsqlparser:*</include>
                   <include>mysql:mysql-connector-java:*</include>
                   <include>org.postgresql:postgresql:*</include>
-                  
+                  <include>com.amazon.redshift:redshift-jdbc41:*</include>
                 </includes>
                 
               </artifactSet>

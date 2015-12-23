@@ -867,8 +867,8 @@ public class Utils {
 			createIfNotExists(n, Double.class, attributes);
 			attributes.set(n, ((DoubleProperty)property).doubleValue());
 		} else if(property instanceof FloatProperty) {
-			createIfNotExists(n, Float.class, attributes);
-			attributes.set(n, ((FloatProperty)property).floatValue());
+			createIfNotExists(n, Double.class, attributes);
+			attributes.set(n, ((FloatProperty)property).doubleValue());
 		} else if(property instanceof GeoLocationProperty) {
 			createIfNotExists(n, String.class, attributes);
 			attributes.set(n, ((GeoLocationProperty)property).toRDFValue());

@@ -6,7 +6,9 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,6 +37,7 @@ import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.auth.VitalAuthKeyValidation;
 import ai.vital.vitalservice.auth.VitalAuthKeyValidation.VitalAuthKeyValidationException;
 import ai.vital.vitalservice.factory.VitalServiceFactory;
+import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.VitalApp;
 import ai.vital.vitalsigns.model.VitalServiceKey;
 import ai.vital.vitalsigns.model.properties.Property_hasKey;
@@ -101,6 +104,9 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 	
 	private JPanel keyPanel = new JPanel();
 	
+	//from vitalsigns config
+	private Map<String, String> profileToKey = new HashMap<String, String>();
+	
 	public ServicePanel() {
 		super();
 				
@@ -112,8 +118,30 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 		Collections.sort(profiles);
 		
 		for(String profile : profiles ) {
+			
 			serviceProfiles.addItem(profile);
+			
+			String k = profile + "-key";
+			
+			Object profileKey = VitalSigns.get().getConfig(k);
+			
+			if(profileKey != null) {
+				
+				if(profileKey instanceof String) {
+					
+					profileToKey.put(profile, (String) profileKey);
+					
+				} else {
+					
+					log.warn("VitalSigns config key: {} expected to be a string, but was: {}", k, profileKey.getClass().getCanonicalName());
+					
+				}
+				
+			}
+			
 		}
+		
+		
 		
 		int ind = profiles.indexOf("default");
 		if(ind >= 0) {
@@ -437,7 +465,10 @@ public class ServicePanel extends JPanel implements LoginListener, ActionListene
 				endpointURLValue.setText(profileConfig.getString("VitalPrime.endpointURL"));
 				
 				keyPanel.setVisible(true);
-				keyField.setText("");
+				
+				String keyValue = profileToKey.get(this.selectedProfile);
+				if(keyValue == null) keyValue = "";
+				keyField.setText(keyValue);
 				
 			} else {
 				

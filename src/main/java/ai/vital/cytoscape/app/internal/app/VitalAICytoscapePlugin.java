@@ -1,5 +1,6 @@
 package ai.vital.cytoscape.app.internal.app;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.swing.JLabel;
+import javax.swing.JTextArea;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -82,6 +84,7 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 	private DialogTaskManager dialogTaskManager;
 
 	private JLabel initLabel = null;
+	
 	public VitalAICytoscapePlugin(CyActivator activator, CyApplicationManager cyApplicationManager, CyNetworkFactory nFactory, 
 			CyNetworkViewFactory nvFactory, CyNetworkManager nManager, CyNetworkViewManager nvManager, CyEventHelper eHelper, 
 			CyLayoutAlgorithmManager cyLayoutAlgorithmManager, DialogTaskManager dialogTaskManager, BundleContext context) {
@@ -124,7 +127,22 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 	@Override
 	public void run() {
 		
-		Application.init();
+		try {
+			
+			Application.init();
+			
+		} catch(Throwable e) {
+			tabPane.remove(initLabel);
+			JTextArea errorLabel = new JTextArea("Vital AI plugin initialization error: \n" + e.getLocalizedMessage());
+			errorLabel.setWrapStyleWord(true);
+			errorLabel.setLineWrap(true);
+			errorLabel.setForeground(Color.RED);
+			errorLabel.setEditable(false);
+			tabPane.add(errorLabel);
+			return;
+
+		}
+				
 		
 		Application.get().addLoginListener(this);
 		

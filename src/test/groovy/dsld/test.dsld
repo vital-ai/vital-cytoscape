@@ -1,0 +1,14 @@
+
+contribute(currentType(subType("java.lang.Object"))) {
+
+	method name:"x", type: 'void', params : [:]
+
+
+}
+
+
+contribute(currentType(subType("ai.vital.cytoscape.app.internal.queries.Test"))) {
+	
+	method name:"yyy", type: 'java.lang.Integer', params : [:]
+	
+}

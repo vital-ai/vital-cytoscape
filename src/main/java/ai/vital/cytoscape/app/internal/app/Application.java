@@ -1,7 +1,6 @@
 package ai.vital.cytoscape.app.internal.app;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,32 +11,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.swing.JOptionPane;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.Job;
-import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
-import ai.vital.prime.service.config.VitalServicePrimeConfig;
 import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
-import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalGraphQuery;
-import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalsigns.VitalSigns;
-import ai.vital.vitalsigns.block.CompactStringSerializer;
 import ai.vital.vitalsigns.classes.ClassMetadata;
+import ai.vital.vitalsigns.conf.VitalSignsConfig;
+import ai.vital.vitalsigns.conf.VitalSignsConfig.DomainsStrategy;
+import ai.vital.vitalsigns.conf.VitalSignsConfig.DomainsSyncMode;
 import ai.vital.vitalsigns.meta.PathElement;
 import ai.vital.vitalsigns.model.Edge_hasChildCategory;
 import ai.vital.vitalsigns.model.GraphMatch;
@@ -48,8 +46,6 @@ import ai.vital.vitalsigns.model.VitalSegment;
 import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
-
-import com.typesafe.config.Config;
 
 public class Application {
 
@@ -95,105 +91,73 @@ public class Application {
 		return singleton;
 	}
 	
-	public static void init() {
+	public static void init() throws Throwable {
 		if(singleton != null) return;
 		singleton = new Application();
 		
 		String vitalHome = System.getenv("VITAL_HOME");
 		log.info("Checking vital singleton...");
+		log.info("$VITAL_HOME: " + vitalHome);
+		
 		VitalSigns vs = null;
+		
 		try {
 			
 			if(vitalHome == null || vitalHome.isEmpty()) {
 				throw new Exception("VITAL_HOME environment variable not set");
 			}
+			
+			File vh = new File(vitalHome);
+			if(!vh.exists()) {
+				throw new Exception("VITAL_HOME location does not exist: " + vh.getAbsolutePath());
+			}
+			
+			if(!vh.isDirectory()) {
+				throw new Exception("VITAL_HOME location is not a directory: " + vh.getAbsolutePath());
+			}
+			
+			File configFile = VitalSigns.getConfigFile(vh);
+			if(!configFile.exists()) {
+				throw new Exception("VitalSigns config file does not exist, path: " + configFile.getAbsolutePath());
+			}
+			
+			try {
+				VitalSignsConfig.fromTypesafeConfig(configFile);
+			} catch(Exception e) {
+				throw new Exception("VitalSigns config file is invalid: " + e.getLocalizedMessage());
+			}
+			
+			File coreModelFile = new File(vitalHome, "vital-ontology/" + VitalCoreOntology.FILE_NAME);
+//			File coreOwvitalHome
+			
+			if(!coreModelFile.exists()) {
+			    throw new Exception("Vital core ontology file not found: " + coreModelFile.getAbsolutePath());
+			}
+			
 		
-			File licenseFile = new File(vitalHome, "vital-license/vital-license.lic");
+			File licenseFile = new File(vh, "vital-license/vital-license.lic");
 			if(!licenseFile.exists()) throw new Exception("Vital license file not found, path: " + licenseFile.getAbsolutePath());
+			
+			Map<String, Object> cfg = new HashMap<String, Object>();
+			cfg.put("domainsStrategy", DomainsStrategy.dynamic.name());
+			cfg.put("autoLoad", true);
+			cfg.put("loadDeployedJars", false);
+			//use whatever value is set in prime
+//			cfg.put("domainsSyncMode", DomainsSyncMode.pull.name());
+			
+			log.info("Overridden vitalsigns config params: {}", cfg);
+			
+			VitalSigns.mergeConfig = ConfigFactory.parseMap(cfg);
 			
 			vs = VitalSigns.get();
 			
 		} catch(Throwable e) {
-			JOptionPane.showMessageDialog(null, e.getMessage(), "Vital AI initialization error", JOptionPane.ERROR_MESSAGE);
-			throw new RuntimeException(e);
+			log.error(e.getLocalizedMessage());
+			throw e;
+//			JOptionPane.showMessageDialog(null, e.getMessage(), "Vital AI initialization error", JOptionPane.ERROR_MESSAGE);
+//			throw new RuntimeException(e);
 		}
 		
-		log.info("$VITAL_HOME: " + vitalHome);
-//		o("Singleton obtained, registering vital domain ontology...");
-		
-		/*
-		 * 
-		File domainJarsDir = new File(vitalHome, "domain-groovy-jar");
-		
-		log.info("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
-		//vs.registerOntology(new VitalOntology());
-		
-		if(domainJarsDir.isDirectory()) {
-			
-			log.info("Domain files count: " +domainJarsDir.listFiles().length);
-			for(File f : domainJarsDir.listFiles()) {
-				
-				if(!f.getName().endsWith(".jar")) {
-					continue;
-				}
-				
-				log.info("Registering domain ontology: " + f.getName());
-				try {
-					vs.registerOntology(f.toURI().toURL());
-				} catch (Exception e) {
-					log.error(e.getLocalizedMessage());
-				}
-				
-			}
-		} else {
-			log.warn("WARN - $VITAL_HOME/domain-jar/ directory does not exist");
-		}
-		
-		*/
-	
-		
-		/*
-		File serviceCfgFile = VitalServiceFactory.getConfigFile();
-		
-		if(!serviceCfgFile.exists()) {
-			log.error("Service config file not found: " + serviceCfgFile.getAbsolutePath());
-			singleton.serviceConfig = ConfigFactory.empty();
-		} else {
-			singleton.serviceConfig = ConfigFactory.parseFile(serviceCfgFile);
-		}
-		
-		List<String> profiles = VitalServiceFactory.getAvailableProfiles();
-
-		singleton.endpointType = EndpointType.LUCENEMEMORY;
-		
-		try {
-			singleton.endpointType = EndpointType.fromString(singleton.serviceConfig.getString("type"));
-		} catch(Exception e) {
-			log.error(e.getLocalizedMessage(), e);
-		}
-		
-		if(singleton.endpointType == EndpointType.VITALPRIME) {
-			
-			String primeURL = "http://127.0.0.1:9080/java";
-			
-			//set initial url
-			try {
-				primeURL = singleton.serviceConfig.getString("VitalPrime.endpointURL");
-			} catch(Exception e) {
-				log.error(e.getLocalizedMessage(), e);
-			}
-			
-			singleton.primeURL = primeURL;
-			
-
-			
-		} else {
-			
-			//just create the service
-//			service = Factory.getVitalService();
-			
-		}
-		*/
 		
 	}
 

@@ -125,7 +125,7 @@
                   <include>vital-ai:vital-domain:*</include>
                   <include>vital-ai:vitalservice:*</include>
                   <include>vital-ai:vital-lucene:*</include>
-                  <include>vital-ai:vital-triplestore:*</include>
+                  <include>vital-ai:vital-sparql:*</include>
 		  <include>vital-ai:vital-sql:*</include>
                   
                   <include>org.openrdf.sesame:*</include>
@@ -280,7 +280,7 @@
     	   
     	<dependency>
       		<groupId>vital-ai</groupId>
-      		<artifactId>vital-triplestore</artifactId>
+      		<artifactId>vital-sparql</artifactId>
       		<version>${vital.version}</version>
     	</dependency>   
 

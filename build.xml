@@ -80,7 +80,7 @@
 				<include name="vital-domain/VitalDomain-groovy-*.jar" />
 				<!-- <include name="vital-dynamodb/**/*.jar" /> -->
 				<include name="vital-lucene/vital-lucene-*.jar" />
-				<include name="vital-triplestore/**/*.jar" />
+				<include name="vital-sparql/**/*.jar" />
 				<include name="vitalservice/VitalService-*.jar" />
 				<include name="vitalservice/VitalService-*.jar" />
 				

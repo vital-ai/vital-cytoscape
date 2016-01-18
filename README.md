@@ -22,7 +22,7 @@ Notes:
 * VitalService LuceneMemory is available, but only ephemoral
 * VitalService LuceneDisk is available
 * VitalService DynamoDB is not available due to a dependency conflict, which may be resolved in the future
-* VitalService Triplestore is available
+* VitalService SparQL is available
 * VitalService IndexDB is available (but not with DynamoDB as the database implementation as above)
 * VitalService VitalPrime is available (VitalPrime can use DynamoDB as its storage backend)
 * The VitalPrime implementation makes available DataScripts such that computation can occur in a cluster.

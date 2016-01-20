@@ -1,9 +1,8 @@
 package ai.vital.cytoscape.app.internal.app;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,37 +17,34 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import ai.vital.cytoscape.app.internal.queries.Queries;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.domain.Datascript;
 import ai.vital.domain.Job;
-import ai.vital.endpoint.EndpointType;
-import ai.vital.lucene.model.LuceneSegment;
 import ai.vital.prime.service.VitalServicePrime;
-import ai.vital.prime.service.config.VitalServicePrimeConfig;
+import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.VitalService;
 import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
-import ai.vital.vitalservice.factory.Factory;
-import ai.vital.vitalservice.model.App;
-import ai.vital.vitalservice.model.Customer;
-import ai.vital.vitalservice.query.QueryPathElement;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
-import ai.vital.vitalservice.query.VitalPropertyConstraint;
-import ai.vital.vitalservice.query.VitalPropertyConstraint.Comparator;
-import ai.vital.vitalservice.query.VitalQueryContainer;
+import ai.vital.vitalservice.query.VitalGraphQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
-import ai.vital.vitalservice.segment.VitalSegment;
 import ai.vital.vitalsigns.VitalSigns;
-import ai.vital.vitalsigns.datatype.VitalURI;
-import ai.vital.vitalsigns.global.GlobalHashTable;
-import ai.vital.vitalsigns.meta.GraphSetsRegistry;
+import ai.vital.vitalsigns.classes.ClassMetadata;
+import ai.vital.vitalsigns.conf.VitalSignsConfig;
+import ai.vital.vitalsigns.conf.VitalSignsConfig.DomainsStrategy;
+import ai.vital.vitalsigns.conf.VitalSignsConfig.DomainsSyncMode;
+import ai.vital.vitalsigns.meta.PathElement;
+import ai.vital.vitalsigns.model.Edge_hasChildCategory;
+import ai.vital.vitalsigns.model.GraphMatch;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PathElement;
-import ai.vital.vitalsigns.model.URIPropertyValue;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.VitalSegment;
+import ai.vital.vitalsigns.model.property.IProperty;
+import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class Application {
@@ -58,6 +54,8 @@ public class Application {
 	private List<LoginListener> loginListeners = new ArrayList<LoginListener>();
 
 	private final static Logger log = LoggerFactory.getLogger(Application.class);
+
+	private static final int HARD_LIMIT = 10000;
 
 	//managed by connection tab
 	private VitalService vitalService = null;
@@ -93,154 +91,155 @@ public class Application {
 		return singleton;
 	}
 	
-	public static void init() {
+	public static void init() throws Throwable {
 		if(singleton != null) return;
 		singleton = new Application();
 		
 		String vitalHome = System.getenv("VITAL_HOME");
 		log.info("Checking vital singleton...");
-		VitalSigns vs = VitalSigns.get();
 		log.info("$VITAL_HOME: " + vitalHome);
-//		o("Singleton obtained, registering vital domain ontology...");
-		File domainJarsDir = new File(vitalHome, "domain-groovy-jar");
-		log.info("Domain jars path: " + domainJarsDir.getAbsolutePath() + " dir ? " + domainJarsDir.isDirectory());
-		//vs.registerOntology(new VitalOntology());
 		
-		if(domainJarsDir.isDirectory()) {
-			
-			log.info("Domain files count: " +domainJarsDir.listFiles().length);
-			for(File f : domainJarsDir.listFiles()) {
-				
-				if(!f.getName().endsWith(".jar")) {
-					continue;
-				}
-				
-				log.info("Registering domain ontology: " + f.getName());
-				try {
-					vs.registerOntology(f.toURI().toURL());
-				} catch (MalformedURLException e) {}
-				
-			}
-		} else {
-			log.warn("WARN - $VITAL_HOME/domain-jar/ directory does not exist");
-		}
-	
-		
-		File serviceCfgFile = new File(vitalHome, "vital-config/vitalservice/vitalservice.config");
-		
-		if(!serviceCfgFile.exists()) {
-			log.error("Service config file not found: " + serviceCfgFile.getAbsolutePath());
-			singleton.serviceConfig = ConfigFactory.empty();
-		} else {
-			singleton.serviceConfig = ConfigFactory.parseFile(serviceCfgFile);
-		}
-
-		singleton.endpointType = EndpointType.LUCENEMEMORY;
+		VitalSigns vs = null;
 		
 		try {
-			singleton.endpointType = EndpointType.fromString(singleton.serviceConfig.getString("type"));
-		} catch(Exception e) {
-			log.error(e.getLocalizedMessage(), e);
-		}
-		
-		if(singleton.endpointType == EndpointType.VITALPRIME) {
 			
-			String primeURL = "http://127.0.0.1:9080/java";
+			if(vitalHome == null || vitalHome.isEmpty()) {
+				throw new Exception("VITAL_HOME environment variable not set");
+			}
 			
-			//set initial url
+			File vh = new File(vitalHome);
+			if(!vh.exists()) {
+				throw new Exception("VITAL_HOME location does not exist: " + vh.getAbsolutePath());
+			}
+			
+			if(!vh.isDirectory()) {
+				throw new Exception("VITAL_HOME location is not a directory: " + vh.getAbsolutePath());
+			}
+			
+			File configFile = VitalSigns.getConfigFile(vh);
+			if(!configFile.exists()) {
+				throw new Exception("VitalSigns config file does not exist, path: " + configFile.getAbsolutePath());
+			}
+			
 			try {
-				primeURL = singleton.serviceConfig.getString("VitalPrime.endpointURL");
+				VitalSignsConfig.fromTypesafeConfig(configFile);
 			} catch(Exception e) {
-				log.error(e.getLocalizedMessage(), e);
+				throw new Exception("VitalSigns config file is invalid: " + e.getLocalizedMessage());
 			}
 			
-			singleton.primeURL = primeURL;
+			File coreModelFile = new File(vitalHome, "vital-ontology/" + VitalCoreOntology.FILE_NAME);
+//			File coreOwvitalHome
 			
-
+			if(!coreModelFile.exists()) {
+			    throw new Exception("Vital core ontology file not found: " + coreModelFile.getAbsolutePath());
+			}
 			
-		} else {
+		
+			File licenseFile = new File(vh, "vital-license/vital-license.lic");
+			if(!licenseFile.exists()) throw new Exception("Vital license file not found, path: " + licenseFile.getAbsolutePath());
 			
-			//just create the service
-//			service = Factory.getVitalService();
+			Map<String, Object> cfg = new HashMap<String, Object>();
+			cfg.put("domainsStrategy", DomainsStrategy.dynamic.name());
+			cfg.put("autoLoad", true);
+			cfg.put("loadDeployedJars", false);
+			//use whatever value is set in prime
+//			cfg.put("domainsSyncMode", DomainsSyncMode.pull.name());
 			
+			log.info("Overridden vitalsigns config params: {}", cfg);
+			
+			VitalSigns.mergeConfig = ConfigFactory.parseMap(cfg);
+			
+			vs = VitalSigns.get();
+			
+		} catch(Throwable e) {
+			log.error(e.getLocalizedMessage());
+			throw e;
+//			JOptionPane.showMessageDialog(null, e.getMessage(), "Vital AI initialization error", JOptionPane.ERROR_MESSAGE);
+//			throw new RuntimeException(e);
 		}
+		
 		
 	}
 
-	public void login(String username, String password, String url) throws Exception {
+//	public void login(String username, String password, String url) throws Exception {
+//
+//		log.debug("Logging in...");
+//		
+//		for(VitalService service : VitalServiceFactory.listOpenServices()) {
+//			service.close();
+//		}
+//		
+//		if(endpointType == EndpointType.VITALPRIME) {
+//			
+//			
+//			String customerID = serviceConfig.getString("customerID");
+//			String appID = serviceConfig.getString("appID");
+//			
+//			App app = new App();
+//			app.setID(appID);
+//			app.setOrganizationID(customerID);
+//			
+//			Organization organization = new Organization();
+//			organization.setID(customerID);
+//			
+//			new URL(url);
+//			
+////			VitalServicePrimeConfigCreator creator = new VitalServicePrimeConfigCreator();
+//			VitalServicePrimeConfig cfg = new VitalServicePrimeConfig();
+//			
+//			cfg.setApp(app);
+//			cfg.setOrganization(organization);
+//			cfg.endpointURL = url;
+//			
+//			VitalService _service = VitalServiceFactory.createVitalService(cfg);
+//			
+//			VitalStatus status = _service.ping();
+//			
+//			if(status.getStatus() != VitalStatus.Status.ok) {
+//				throw new Exception("Ping failed: " + status.getMessage());
+//			}
+//			
+//			vitalService = _service;
+//			
+////			creator.setCustomConfigProperties(cfg, serviceConfig);
+//			
+//			
+//		} else {
+//			
+//			//just create the service with factory
+//			
+//			vitalService = VitalServiceFactory.getVitalService();
+//			
+//		}
+//		
+//		/*
+//		VitalService.setEndpoint(url);
+//		
+//		Map<String, Object> params = new HashMap<String, Object>();
+//		params.put("accountType", "local");
+//		params.put("segment", "modernist");
+//		params.put("username", username);
+//		params.put("password", password);
+//		
+//		ResultSet rs = VitalService.getInstance().callFunction("AuthenticateUser.groovy", params);
+//		if(!rs.isOk()) throw new Exception(rs.getErrorMessage());
+//		*/
+//		//successfully authenticated?
+//		
+//		/*
+//		o("Testing expansion...");
+//		
+//		ResultList expanded = getConnections("http://uri.vital.ai/wordnet/NounSynsetNode_1396611318625_1016512");
+//		
+//		for(ResultElement el : expanded.getResults()) {
+//			log.debug(el.getGraphObject());
+//		}
+//		*/
+//		
+//		notifyListenersOfLoginEvent();
+//		
+//	}
 
-		log.debug("Logging in...");
-		
-		
-		if(endpointType == EndpointType.VITALPRIME) {
-			
-			String customerID = serviceConfig.getString("customerID");
-			String appID = serviceConfig.getString("appID");
-			
-			App app = new App();
-			app.setID(appID);
-			app.setCustomerID(customerID);
-			
-			Customer customer = new Customer();
-			customer.setID(customerID);
-			
-			new URL(url);
-			
-//			VitalServicePrimeConfigCreator creator = new VitalServicePrimeConfigCreator();
-			VitalServicePrimeConfig cfg = new VitalServicePrimeConfig();
-			
-			cfg.setApp(app);
-			cfg.setCustomer(customer);
-			cfg.endpointURL = url;
-			
-			VitalService _service = Factory.createVitalService(cfg);
-			
-			VitalStatus status = _service.ping();
-			
-			if(status.getStatus() != VitalStatus.Status.ok) {
-				throw new Exception("Ping failed: " + status.getMessage());
-			}
-			
-			vitalService = _service;
-			
-//			creator.setCustomConfigProperties(cfg, serviceConfig);
-			
-			
-		} else {
-			
-			//just create the service with factory
-			
-			vitalService = Factory.getVitalService();
-			
-		}
-		
-		/*
-		VitalService.setEndpoint(url);
-		
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("accountType", "local");
-		params.put("segment", "modernist");
-		params.put("username", username);
-		params.put("password", password);
-		
-		ResultSet rs = VitalService.getInstance().callFunction("AuthenticateUser.groovy", params);
-		if(!rs.isOk()) throw new Exception(rs.getErrorMessage());
-		*/
-		//successfully authenticated?
-		
-		/*
-		o("Testing expansion...");
-		
-		ResultList expanded = getConnections("http://uri.vital.ai/wordnet/NounSynsetNode_1396611318625_1016512");
-		
-		for(ResultElement el : expanded.getResults()) {
-			log.debug(el.getGraphObject());
-		}
-		*/
-		
-		notifyListenersOfLoginEvent();
-		
-	}
 
 	public static interface LoginListener {
 		
@@ -267,20 +266,25 @@ public class Application {
 	public void logout() {
 
 		this.vitalService = null;
+		//reset hierarchy root
+		this.root = new HierarchyNode();
 		notifyListenersOfLogoutEvent();
 		
 	}
 
 	public ResultList search(VitalSelectQuery sq) throws Exception {
-		return vitalService.selectQuery(sq);
+		return vitalService.query(sq);
 	}
 
 	public boolean isExpandUsingSynonyms() {
 		return false;
 	}
 
-	public ResultList getConnections(String uri_str, String typeURI) {
+	@SuppressWarnings("unchecked")
+	public ResultList getConnections(String uri_str, String typeURI, int offset, int limit) {
 
+		log.info("Getting connections, URI: {}, typeURI: {}, offset: {}, limit: {}", new Object[]{uri_str, typeURI, offset, limit});
+		
 		//expansion
 		/*
 		GraphObject graphObject = null;
@@ -296,159 +300,252 @@ public class Application {
 		
 		if(direction == null) direction = ExpansionDirection.Outgoing;
 		
+		List<VitalSegment> selectedSegments = VitalAICytoscapePlugin.getPathSegments();
+		
+		Integer depth = VitalAICytoscapePlugin.getDepth();
+		if(depth == null) depth = 1;
+		
 		ResultList rs = new ResultList();
-		List<ResultElement> li = new ArrayList<ResultElement>();
-		rs.setResults(li);
-		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
+//		List<ResultElement> li = new ArrayList<ResultElement>();
+//		rs.setResults(li);
+
+		Map<String, GraphObject> resultsMap = new HashMap<String, GraphObject>();
+		
+		
+		List<List<PathElement>> fPaths = null;
+		List<List<PathElement>> rPaths = null;
 		try {
-			serviceSegments = getServiceSegments();
-		} catch (Exception e1) {
-		}
-		
-		
-		for(Entry<String, LuceneSegment> en : VitalSigns.get().getNs2Segment().entrySet()) {
-			
-			String domainSegment = en.getKey();
-			
-			LuceneSegment value = en.getValue();
-			
-			//select all edges
-			VitalSelectQuery sq = new VitalSelectQuery();
-			sq.setLimit(1000);
-			sq.setOffset(0);
-			sq.setType(VitalQueryContainer.Type.or);
-			
+			ClassMetadata cm = VitalSigns.get().getClassesRegistry().getClass(typeURI) ;
+			if(cm == null) throw new Exception("Class not found: " + typeURI);
+			Class<? extends GraphObject> gClass = cm.getClazz();
 			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
-				sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeSource.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
-			}
-			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
-				sq.getComponents().add(new VitalPropertyConstraint(VitalCoreOntology.hasEdgeDestination.getURI(), new URIPropertyValue(uri_str), Comparator.EQ));
-			}
-			
-			ResultList rl = VitalSigns.get().doSelectQuery(domainSegment, sq);
-			for(ResultElement r : rl.getResults()) {
-				GraphObject _e= r.getGraphObject();
-				if(!(_e instanceof VITAL_Edge)) continue;
-				VITAL_Edge e = (VITAL_Edge) _e;
-				GraphObject otherEndpoint = null;
-				if(!e.getSourceURI().equals(uri_str)) {
-					otherEndpoint = value.get(e.getSourceURI());
-				} 
-				if(!e.getDestinationURI().equals(uri_str)) {
-					otherEndpoint = value.get(e.getDestinationURI());
-				}
-				
-				if(otherEndpoint != null) {
-					li.add(new ResultElement(e, 1d));
-					li.add(new ResultElement(otherEndpoint, 1d));
-				}
-			}
-			
-		}
-		
-		if(serviceSegments.size() > 0){
-		
-		try {
-			
-			Class<? extends GraphObject> gClass = VitalSigns.get().getGroovyClass(typeURI);
-			
-			if(gClass == null) {
-				log.warn("No groovy class for URI: " + typeURI);
-				return rs;
-			}
-			
-			//paths list 
-			List<List<PathElement>> vpaths = new ArrayList<List<PathElement>>();
-			
-			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
-				vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, true));
+				fPaths = VitalSigns.get().getClassesRegistry().getPaths(gClass, true);
+			} else {
+				fPaths = new ArrayList<List<PathElement>>();
 			}
 			
 			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
-				vpaths.addAll(GraphSetsRegistry.get().getPaths(gClass, false));
+				rPaths = VitalSigns.get().getClassesRegistry().getPaths(gClass, false);
+			} else {
+				rPaths = new ArrayList<List<PathElement>>();
 			}
-			
-			if(vpaths.size() < 1) {
-				log.warn("Default taxonomy paths list for class: " + gClass.getCanonicalName() + " is empty - cannot expand the object");
-				return rs;
-			}
-				
-			List<List<QueryPathElement>> paths = new ArrayList<List<QueryPathElement>>(vpaths.size());
-			
-			//convert paths into query path elements
-			for(List<PathElement> path : vpaths) {
-				
-				List<QueryPathElement> qpath = new ArrayList<QueryPathElement>(path.size());
-				
-				for(PathElement pe : path) {
-					Class<? extends VITAL_Edge> edgeClass = VitalSigns.get().getGroovyClass(pe.getEdgeTypeURI());
-					QueryPathElement qpe = new QueryPathElement(edgeClass, null, pe.isReversed() ? QueryPathElement.Direction.reverse : QueryPathElement.Direction.forward, QueryPathElement.CollectEdges.yes, QueryPathElement.CollectDestObjects.yes);
-					qpath.add(qpe);
-				}
-				
-				paths.add(qpath);
-				
-			}
-			
-			
-			GraphObject graphObjectExpanded = vitalService.getExpandedInSegmentsWithPaths(VitalURI.withString(uri_str), serviceSegments, paths);
-//			o("Expanded: " + graphObjectExpanded);
-			if(graphObjectExpanded instanceof VITAL_Node) {
-				VITAL_Node n = (VITAL_Node) graphObjectExpanded;
-				List<VITAL_Edge> outgoingEdges = n.getOutgoingEdges();
-//				o("outgoing edges: " + outgoingEdges.size());
-				List<GraphObject> l = new ArrayList<GraphObject>();
-				l.addAll(outgoingEdges);
-				
-				for(VITAL_Edge e : outgoingEdges) {
-					GraphObject o = GlobalHashTable.get().get(e.getDestinationURI());
-					if(o != null) {
-						l.add(o);
-					}
-				}
-				
-				List<VITAL_Edge> incomingE = ((VITAL_Node) graphObjectExpanded).getIncomingEdges();
-//				o("incoming edges: " + outgoingEdges.size());
-				l.addAll(incomingE);
-				
-				for(VITAL_Edge e : incomingE) {
-					GraphObject o = GlobalHashTable.get().get(e.getSourceURI());
-					if(o != null) {
-						l.add(o);
-					}
-				}
-				
-//				rs.putGraphObjects(l);
-				for(GraphObject g : l) {
-					li.add(new ResultElement(g, 1d));
-				}
-				
-			}
-//			o("Results: " + li.size());
-		} catch (Exception e) {
-			log.error(e.getLocalizedMessage(), e);
-		}
+		} catch (Exception e2) {
+			log.error(e2.getLocalizedMessage(), e2);
+			rs.setStatus(VitalStatus.withError(e2.getLocalizedMessage()));
+			return rs;
 		}
 		
+		List<Class<? extends VITAL_Edge>> fClasses = new ArrayList<Class<? extends VITAL_Edge>>();
+		List<Class<? extends VITAL_Edge>> rClasses = new ArrayList<Class<? extends VITAL_Edge>>();
 		
-		//filter out duplicate URIs objects now
-		Set<String> uris = new HashSet<String>(); 
-		for( Iterator<ResultElement> iterator = rs.getResults().iterator(); iterator.hasNext(); ) {
-			ResultElement next = iterator.next();
-			if(!uris.add(next.getGraphObject().getURI())) {
-				iterator.remove();
-			}
+		for(List<PathElement> p : fPaths) {
+			PathElement pe = p.get(0);
+			if(!pe.isHyperedge()) fClasses.add((Class<? extends VITAL_Edge>) pe.getEdgeClass());
 		}
+		
+		for(List<PathElement> p : rPaths) {
+			PathElement pe = p.get(0);
+			if(!pe.isHyperedge()) rClasses.add((Class<? extends VITAL_Edge>) pe.getEdgeClass());
+		}
+
+		if(fClasses.size() == 0 && rClasses.size() == 0) {
+//			log.warn("No path classes found, {}", typeURI);
+//			return rs;
+		}
+
+//		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
+//		try {
+//			serviceSegments = getServiceSegments();
+//		} catch (Exception e1) {
+//		}
+		
+		
+		
+		//XXX temporarily override f and r classes
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+			fClasses.add(Edge_hasChildCategory.class);
+		} else {
+			fClasses.clear();
+		}
+		
+		//XXX temporarily override f and r classes
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+			rClasses.add(Edge_hasChildCategory.class);
+		} else {
+			rClasses.clear();
+		}
+		
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, fClasses, rClasses);
+		
+		
+		//XXX path query
+//		VitalPathQuery vpq = Queries.connectionsQuery(new ArrayList<VitalSegment>(), uri_str, depth, fClasses, rClasses);
+//		rs.setLimit(-1);
+
+		List<String> nsList = new ArrayList<String>(VitalSigns.get().getOntologyURI2ImportsTree().keySet());
+		
+		for(String domainSegment : nsList) {
+			
+			try {
+				
+				//XXX path query
+//				vpq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+//				
+//				ResultList rlx = VitalSigns.get().query(vpq, nsList);
+//				
+//				filterGraphMatch(rlx, resultsMap);
+				
+				
+				vgq.setSegments(Arrays.asList(VitalSegment.withId(domainSegment)));
+				
+				ResultList rlx = VitalSigns.get().query(vgq, nsList);
+					
+				if(rlx.getResults().size() < limit) {
+						
+					offset = -1;
+						
+				} else if(offset + limit >= HARD_LIMIT) {
+						
+					log.info("Local Query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+						
+					offset = -1;
+						
+				} else {
+						
+					offset += limit;
+					
+				}
+					
+				filterGraphMatch(rlx, resultsMap);
+					
+			} catch (Exception e) {
+				log.error(e.getLocalizedMessage(), e);
+			}
+			
+		}
+		
+			
+			
+//		}
+		
+		log.info("Selected segments count: " + selectedSegments.size());
+		
+		if(selectedSegments.size() > 0){
+		
+			try {
+
+//				XXX path query
+//				vpq.setSegments(serviceSegments);
+//				ResultList rlx = vitalService.query(vpq);
+//				filterGraphMatch(rlx, resultsMap);
+				
+				vgq.setSegments(selectedSegments);
+				
+				ResultList rlx = vitalService.query(vgq);
+				
+				log.info("GraphQuery status: {}", rlx.getStatus().toString());
+				
+				if(rlx.getResults().size() < limit) {
+						
+					offset = -1;
+					rs.setLimit(-1);
+						
+				} else if(offset + limit >= HARD_LIMIT) {
+						
+					log.info("Service query HARD LIMIT hit: " + HARD_LIMIT + " node " + uri_str + " expansion stopped");
+						
+					offset = -1;
+					
+					rs.setLimit(-1);
+						
+				} else {
+						
+					offset += limit;
+						
+					rs.setLimit(offset);
+					
+				}
+					
+				filterGraphMatch(rlx, resultsMap);
+
+			} catch (Exception e) {
+				log.error(e.getLocalizedMessage(), e);
+			}
+			
+		} else {
+			
+			rs.setLimit(offset);
+			
+		}
+		
+
+		for(Entry<String, GraphObject> entry : resultsMap.entrySet()) {
+			
+			rs.getResults().add(new ResultElement(entry.getValue(), 1D));
+			
+		}
+		
 		
 		return rs;
 		
 	}
 
-	public VitalSegment getWordnetSegment() {
-		VitalSegment s1 = new VitalSegment();
-		s1.setId("wordnet");
-		return s1;
+	public static void filterGraphMatch(ResultList rlx,
+			Map<String, GraphObject> resultsMap) {
+
+		
+		Set<String> uriProps = new HashSet<String>();
+		
+		for(GraphObject g : rlx) {
+			
+			if(g instanceof GraphMatch) {
+
+				uriProps.clear();
+				
+				for(IProperty p : g.getPropertiesMap().values()) {
+					if(!(p instanceof URIProperty)) continue;
+					URIProperty u = (URIProperty) p;
+					
+					String objURI = u.get();
+					if(resultsMap.containsKey(objURI)) {
+						
+						continue;
+						
+					}
+					
+					uriProps.add(objURI);
+				}
+				
+				for(String uriProp : uriProps) {
+					
+					Object v = g.getProperty(uriProp);
+					if(v == null || !(v instanceof GraphObject)) continue;
+					
+					GraphObject gx = (GraphObject) v;
+					
+					resultsMap.put(gx.getURI(), gx);
+					
+				}
+				
+			} else {
+				
+				if(resultsMap.containsKey(g.getURI())) continue;
+				
+				resultsMap.put(g.getURI(), g);
+				
+			}
+			
+			
+		}
+		
+		
 	}
+
+//	public VitalSegment getWordnetSegment() {
+//		VitalSegment s1 = new VitalSegment();
+//		s1.setID("wordnet");
+//		return s1;
+//	}
 
 	public List<VitalSegment> getServiceSegments() throws VitalServiceException, VitalServiceUnimplementedException {
 		return vitalService.listSegments();
@@ -485,8 +582,8 @@ public class Application {
 				
 				GraphObject g = iterator.next();
 				if(g instanceof Job) {
-					Boolean callable = (Boolean) g.getProperty("callable");
-					if(callable == null || callable.equals(Boolean.FALSE)) {
+					IProperty callable = (IProperty) g.getProperty("callable");
+					if(callable == null || callable.rawValue().equals(Boolean.FALSE)) {
 						iterator.remove();
 					}
 				}
@@ -503,41 +600,12 @@ public class Application {
 		}
 	}
 
-	public static void initForTests() {
+	public static void initForTests(VitalService service) {
 
 		singleton = new Application();
-		singleton.vitalService = Factory.getVitalService();
-		
-		String vitalHome = System.getenv("VITAL_HOME");
-		log.info("$VITAL_HOME: " + vitalHome);
-	
-		File serviceCfgFile = new File(vitalHome, "vital-config/vitalservice/vitalservice.config");
-		
-		if(!serviceCfgFile.exists()) {
-			log.error("Service config file not found: " + serviceCfgFile.getAbsolutePath());
-			singleton.serviceConfig = ConfigFactory.empty();
-		} else {
-			singleton.serviceConfig = ConfigFactory.parseFile(serviceCfgFile);
-		}
+		singleton.vitalService = service;
 		
 		singleton.endpointType = singleton.vitalService.getEndpointType();
-		
-		if(singleton.vitalService instanceof VitalServicePrime) {
-			
-			String primeURL = "http://127.0.0.1:9080/java";
-			
-			//set initial url
-			try {
-				primeURL = singleton.serviceConfig.getString("VitalPrime.endpointURL");
-			} catch(Exception e) {
-				log.error(e.getLocalizedMessage(), e);
-			}
-			
-			singleton.primeURL = primeURL;
-			
-		}
-		
-
 		
 	}
 
@@ -676,10 +744,17 @@ public class Application {
 			HierarchyNode child = new HierarchyNode();
 			child.URI = u;
 			
-			String gname = (String) n.getProperty("name");
+			String gname = (String) n.getProperty("name").toString();
 			
-			Class<? extends GraphObject> cls = (Class<? extends GraphObject>) VitalSigns.get().getGroovyClass(u);//Class.forName((String) n.getProperty("name"));
-			if(cls == null) throw new Exception("Class not found: " + gname + " uri: " + u);
+			ClassMetadata cm = VitalSigns.get().getClassesRegistry().getClass(u);
+			
+			if(cm == null) {
+				log.warn("Class not found: " + gname + " uri: " + u);
+				continue;
+//				throw new Exception("Class not found: " + gname + " uri: " + u);
+			}
+			
+			Class<? extends GraphObject> cls = cm.getClazz();
 			child.cls = cls;
 			
 			parent.children.add(child);
@@ -687,6 +762,22 @@ public class Application {
 			processHierarchy(child, nodes, src2Dest);
 			
 		}
+		
+	}
+
+	public void login(VitalService _service) throws Exception {
+		
+		VitalStatus status = _service.ping();
+		
+		if(status.getStatus() != VitalStatus.Status.ok) {
+			throw new Exception("Ping failed: " + status.getMessage());
+		}
+		
+		vitalService = _service;
+		
+		endpointType = vitalService.getEndpointType();
+		
+		notifyListenersOfLoginEvent();		
 		
 	}
 

@@ -1,7 +1,7 @@
 package ai.vital.cytoscape.app.internal.model;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,12 +24,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
+import ai.vital.vitalsigns.model.property.BooleanProperty;
+import ai.vital.vitalsigns.model.property.DateProperty;
+import ai.vital.vitalsigns.model.property.DoubleProperty;
+import ai.vital.vitalsigns.model.property.FloatProperty;
+import ai.vital.vitalsigns.model.property.GeoLocationProperty;
+import ai.vital.vitalsigns.model.property.IProperty;
+import ai.vital.vitalsigns.model.property.IntegerProperty;
+import ai.vital.vitalsigns.model.property.LongProperty;
+import ai.vital.vitalsigns.model.property.MultiValueProperty;
+import ai.vital.vitalsigns.model.property.OtherProperty;
+import ai.vital.vitalsigns.model.property.StringProperty;
+import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PropertyInterface;
-import ai.vital.vitalsigns.model.URIPropertyValue;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.rdf.RDFUtils;
 
 public class Utils {
 
@@ -702,16 +713,17 @@ public class Utils {
 //		createIfNotExists(Attributes.canonicalName, String.class, nodeAttributes);
 		String resolvedName = PropertyUtils.resolveName(entity);
 //		nodeAttributes.set(Attributes.canonicalName, resolvedName);
+		createIfNotExists(Attributes.name, String.class, nodeAttributes);
 		nodeAttributes.set(Attributes.name, resolvedName);
 //		nodeAttributes.setAttribute(id, Attributes.category, entity.getCategoryID());
 //		nodeAttributes.setAttribute(id, Attributes.scope, entity.getScopeType().toString());
 //		nodeAttributes.setAttribute(id, Attributes.segment, entity.getSegmentName());
 //		nodeAttributes.setAttribute(id, Attributes.numInteractionEdges, entity.getNumInteractionEdges());
 //		nodeAttributes.setAttribute(id, Attributes.numSubsumptionEdges, entity.getNumSubsumptionEdges());
-		if(entity.getProperty("timestamp") != null ) {
-			createIfNotExists("timestamp", String.class, nodeAttributes);
-			nodeAttributes.set(Attributes.creationDate, TimeUtils.convertDate((Long)entity.getProperty("timestamp")));
-		}
+//		if(entity.getProperty("timestamp") != null ) {
+//			createIfNotExists("timestamp", String.class, nodeAttributes);
+//			nodeAttributes.set(Attributes.timestamp, TimeUtils.convertDate((Long)entity.getProperty("timestamp")));
+//		}
 //		nodeAttributes.setAttribute(id, Attributes.knownDate, TimeUtils.convertDate(entity.getKnownDate()));
 //		nodeAttributes.setAttribute(id, Attributes.modificationDate, TimeUtils.convertDate(entity.getModificationDate()));
 		
@@ -726,13 +738,13 @@ public class Utils {
 		go_cats.put(Attributes.GO_MOLECULAR_FUNCTION, new HashSet<String>());
 		
 		
-		for( Iterator<Entry<String, PropertyInterface>> iterator = entity.getProperties().entrySet().iterator(); iterator.hasNext(); ) {
+		for( Iterator<Entry<String, IProperty>> iterator = entity.getPropertiesMap().entrySet().iterator(); iterator.hasNext(); ) {
 			
-			Entry<String, PropertyInterface> next = iterator.next();
+			Entry<String, IProperty> next = iterator.next();
 			
-			String propName = next.getKey();
+			String propURI = next.getKey();
 			
-			setProperty(nodeAttributes, next.getValue());
+			setProperty(nodeAttributes, propURI, next.getValue());
 		}
 		
 //		if(typeID != null && categoryID != null) {
@@ -742,7 +754,7 @@ public class Utils {
 //		}
 		
 		createIfNotExists(Attributes.nodeTypeURI, String.class, nodeAttributes);
-		nodeAttributes.set(Attributes.nodeTypeURI, VitalSigns.get().getRDFClass(entity.getClass()));
+		nodeAttributes.set(Attributes.nodeTypeURI, VitalSigns.get().getClassesRegistry().getClassURI(entity.getClass()));
 		
 		
 		/*XXX restore?
@@ -834,35 +846,57 @@ public class Utils {
 			propName.equals(MOLECULAR_FUNCTION);
 	}
 
-	private static void setProperty(CyRow attributes, PropertyInterface propertyO) {
+	private static void setProperty(CyRow attributes, String propURI, IProperty propertyO) {
 		
-		if(propertyO.getValue() == null) {
-			log.debug( "Property \"" + propertyO.getShortName() + "\" value is null" );
+		if(propertyO == null) {
+			log.debug( "Property \"" + propertyO + "\" value is null" );
 			return;
 		}
+
+		String n = RDFUtils.getPropertyShortName(propURI);
 		
-		Object property = propertyO.getValue();
+		IProperty property = propertyO.unwrapped();
 		
-		String n = propertyO.getShortName();
-		
-		if(property instanceof Boolean) {
+		if(property instanceof BooleanProperty) {
 			createIfNotExists(n, Boolean.class, attributes);
-			attributes.set(n, (Boolean)property);
-		} else if(property instanceof Date) {
+			attributes.set(n, ((BooleanProperty)property).booleanValue());
+		} else if(property instanceof DateProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, TimeUtils.convertDate((Date)property));
-		} else if(property instanceof Double) {
+			attributes.set(n, TimeUtils.convertDate(((DateProperty)property).getDate()));
+		} else if(property instanceof DoubleProperty) {
 			createIfNotExists(n, Double.class, attributes);
-			attributes.set(n, (Double)property);
-		} else if(property instanceof Integer) {
+			attributes.set(n, ((DoubleProperty)property).doubleValue());
+		} else if(property instanceof FloatProperty) {
+			createIfNotExists(n, Double.class, attributes);
+			attributes.set(n, ((FloatProperty)property).doubleValue());
+		} else if(property instanceof GeoLocationProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((GeoLocationProperty)property).toRDFValue());
+		} else if(property instanceof IntegerProperty) {
 			createIfNotExists(n, Integer.class, attributes);
-			attributes.set(n, (Integer)property);
-		} else if(property instanceof String) {
+			attributes.set(n, ((IntegerProperty)property).intValue());
+		} else if(property instanceof LongProperty) {
+			createIfNotExists(n, Long.class, attributes);
+			attributes.set(n, ((LongProperty)property).longValue());
+		} else if(property instanceof MultiValueProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, (String)property);
-		} else if(property instanceof URIPropertyValue) {
+			StringBuilder v = new StringBuilder();
+			MultiValueProperty mvp = (MultiValueProperty) property;
+			Collection rawValue = (Collection) mvp.rawValue();
+			for(Object o : rawValue) {
+				if(v.length() > 0) v.append(", ");
+				v.append(o);
+			}
+			attributes.set(n, v.toString());
+		} else if(property instanceof OtherProperty) {
 			createIfNotExists(n, String.class, attributes);
-			attributes.set(n, ((URIPropertyValue)property).getURI());
+			attributes.set(n, ((OtherProperty)property).toRDFString());
+		} else if(property instanceof StringProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((StringProperty)property).toString());
+		} else if(property instanceof URIProperty) {
+			createIfNotExists(n, String.class, attributes);
+			attributes.set(n, ((URIProperty)property).get());
 		} 
 	}
 	
@@ -927,7 +961,19 @@ public class Utils {
 		r.set(Attributes.uri, relation.getURI());
 		
 		createIfNotExists(Attributes.edgeTypeURI, String.class, r);
-		r.set(Attributes.edgeTypeURI, VitalSigns.get().getRDFClass(relation.getClass()));
+		r.set(Attributes.edgeTypeURI, VitalSigns.get().getClassesRegistry().getClassURI(relation.getClass()));
+		
+		String sourceURI = relation.getSourceURI();
+		if(sourceURI != null) {
+			createIfNotExists(Attributes.edgeSourceURI, String.class, r);
+			r.set(Attributes.edgeSourceURI, sourceURI);
+		}
+		
+		String destinationURI = relation.getDestinationURI();
+		if(destinationURI != null) {
+			createIfNotExists(Attributes.edgeDestinationURI, String.class, r);
+			r.set(Attributes.edgeDestinationURI, destinationURI);
+		}
 		
 	}
 

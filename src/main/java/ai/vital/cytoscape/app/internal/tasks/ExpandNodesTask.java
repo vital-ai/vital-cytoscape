@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 
@@ -20,6 +21,7 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+import org.cytoscape.work.swing.DialogTaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,8 +115,6 @@ public class ExpandNodesTask implements Task {
 				e.printStackTrace();
 			}
 		}
-		
-		VisualStyleUtils.applyVisualStyle(VitalAICytoscapePlugin.getCurrentNetworkView());
 		
 	}
 
@@ -319,10 +319,11 @@ public class ExpandNodesTask implements Task {
 				
 			}
 			
-			
-			TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
-			
-			VitalAICytoscapePlugin.getDialogTaskManager().execute(ti);
+
+			//disabled nodes expansion here, call it once after all nodes are epxanded
+			//XXX
+//			TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(nodeViews), "");
+//			VitalAICytoscapePlugin.getDialogTaskManager().execute(ti);
 			
 //				Utils.getKamadaKawaiLayoutAlgorithm().setSelectedOnly(true);
 				
@@ -493,6 +494,9 @@ public class ExpandNodesTask implements Task {
 	        
 			int nouris = 0;
 			
+			Set<View<CyNode>> allNodeViews = new HashSet<View<CyNode>>();
+			
+			Set<Long> allNodesIDs = new HashSet<Long>();
 	        
 			while (i.hasNext()) {
 				
@@ -532,17 +536,46 @@ public class ExpandNodesTask implements Task {
 						
 					} else {
 						
-						List<GraphObject> objects = new ArrayList<GraphObject>();
 						
-						//get filters and direction from path tab
-						ResultList rs_connections = Application.get().getConnections(uri_str, typeURI);
-						for(ResultElement g : rs_connections.getResults()) {
-							objects.add(g.getGraphObject());
+						int offset = 0;
+						
+						int limit = 1000;
+						
+						
+						while(offset >= 0) {
+							
+							List<GraphObject> objects = new ArrayList<GraphObject>();
+							//get filters and direction from path tab
+							long s = System.currentTimeMillis();
+							ResultList rs_connections = Application.get().getConnections(uri_str, typeURI, offset, limit);
+							for(ResultElement g : rs_connections.getResults()) {
+								objects.add(g.getGraphObject());
+							}
+							
+							boolean more = rs_connections.getLimit().intValue() >= 0; 
+							
+							log.info("Results fetch {} - {} time: {}ms, has more ? {}", new Object[]{offset, offset + limit, System.currentTimeMillis() - s, more});
+//							objects = filterNodesAndSegments(rs_relations);
+							
+							s = System.currentTimeMillis();
+							List<View<CyNode>> processed = processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
+							for(View<CyNode> p : processed) {
+								if(allNodesIDs.add(p.getSUID())) {
+									allNodeViews.add(p);
+								}
+							}
+							
+							
+							log.info("Results processing time: {}ms", new Object[]{System.currentTimeMillis() - s});
+							
+							if( more ) {
+								offset += limit;
+							} else {
+								offset = -1;
+							}
+							
+							
 						}
-						
-//						objects = filterNodesAndSegments(rs_relations);
-						
-						processNode(nv, cyNet, myView, createdIds, objects, centerNotFitContent);
 						
 						
 						
@@ -566,9 +599,7 @@ public class ExpandNodesTask implements Task {
 			
 			taskMonitor.setStatusMessage("Done!");
 			
-			taskMonitor.setProgress(1D);
 			
-//			Utils.applyVisualStyle(cyNet);
 			VisualStyleUtils.applyVisualStyle(myView);
 //			Utils.getKamadaKawaiLayoutAlgorithm().unlockAllNodes();
 			
@@ -584,6 +615,17 @@ public class ExpandNodesTask implements Task {
 			if(nouris > 0 && processed_nodes == nouris) {
 				JOptionPane.showMessageDialog(null, "No nodes with URI property, at least one required", "Expansion error", JOptionPane.ERROR_MESSAGE);
 			}
+			
+			if(allNodeViews.size() > 0) {
+				
+				TaskIterator ti = Utils.getKamadaKawaiLayout().createTaskIterator(myView, Utils.getKamadaKawaiLayout().getDefaultLayoutContext(), new HashSet<View<CyNode>>(allNodeViews), "");
+				DialogTaskManager dialogTaskManager = VitalAICytoscapePlugin.getDialogTaskManager();
+				dialogTaskManager.execute(ti);
+				
+			}
+
+			taskMonitor.setProgress(1D);
+			
 			
 		}
 		

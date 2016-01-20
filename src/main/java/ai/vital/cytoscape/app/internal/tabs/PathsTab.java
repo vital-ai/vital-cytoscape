@@ -19,9 +19,10 @@ import ai.vital.cytoscape.app.internal.app.Application.HierarchyNode;
 import ai.vital.cytoscape.app.internal.panels.JCheckBoxTree;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.domain.ontology.VitalOntology;
-import ai.vital.endpoint.EndpointType;
+import ai.vital.vitalservice.EndpointType;
 import ai.vital.vitalservice.exception.VitalServiceException;
 import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
+import ai.vital.vitalservice.factory.VitalServiceFactory;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
@@ -32,7 +33,9 @@ public class PathsTab extends JPanel {
 
 	private SegmentsPanel segmentsPanel;
 	
-	private JComboBox<ExpansionDirection> directionBox; 
+	private JComboBox<ExpansionDirection> directionBox;
+	
+	private JComboBox<Integer> depthBox;
 	
 	public PathsTab() {
 		
@@ -64,6 +67,22 @@ public class PathsTab extends JPanel {
 		
 		northPanel.add(Box.createRigidArea(new Dimension(1, 10)));
 
+		
+		
+		depthBox = new JComboBox<Integer>();
+		depthBox.addItem(1);
+		depthBox.addItem(2);
+		
+		JPanel depthPanel = new JPanel();
+		depthPanel.setLayout(new BoxLayout(depthPanel, BoxLayout.X_AXIS));
+		depthPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		depthPanel.add(new JLabel("Expansion Depth:"));
+		depthPanel.add(Box.createRigidArea(new Dimension(10, 1)));
+		depthBox.setPreferredSize(new Dimension(90, 30));
+		depthPanel.add(depthBox);
+		northPanel.add(depthPanel);
+		
+		northPanel.add(Box.createRigidArea(new Dimension(1, 10)));
 		
 		
 		//filters available only in prime endpoint
@@ -159,12 +178,15 @@ public class PathsTab extends JPanel {
 		return segmentsPanel;
 	}
 	
+	/*
 	public static void main(String[] args) throws VitalServiceException, VitalServiceUnimplementedException {
 		
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests();
+		VitalServiceFactory.setServiceProfile("vitaldevelopmentprime");
+		
+		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		PathsTab panel = new PathsTab();
 
@@ -179,11 +201,11 @@ public class PathsTab extends JPanel {
 		frame.setVisible(true);
 		
 
-		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
-		
-		System.out.println(rl.toString());
+//		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
+//		System.out.println(rl.toString());
 		
 	}
+	*/
 
 	public static enum ExpansionDirection {
 		Both,
@@ -193,5 +215,9 @@ public class PathsTab extends JPanel {
 
 	public ExpansionDirection getExpansionDirection() {
 		return (ExpansionDirection) directionBox.getSelectedItem();
+	}
+	
+	public Integer getDepth() {
+		return (Integer) depthBox.getSelectedItem();
 	}
 }

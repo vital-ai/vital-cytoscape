@@ -18,7 +18,8 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 
-import ai.vital.vitalservice.segment.VitalSegment;
+import ai.vital.vitalsigns.model.VitalSegment;
+import ai.vital.vitalsigns.model.properties.Property_hasSegmentID;
 
 public class SegmentsPanel extends JPanel {
 
@@ -137,7 +138,7 @@ public class SegmentsPanel extends JPanel {
 		}
 
 		public String toString() {
-			return segment.getId();
+			return "" + segment.get(Property_hasSegmentID.class);
 		}
 
 		public VitalSegment getSegment() {

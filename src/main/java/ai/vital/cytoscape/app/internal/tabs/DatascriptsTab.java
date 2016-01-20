@@ -60,9 +60,10 @@ import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PropertyInterface;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.property.IProperty;
+import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
 public class DatascriptsTab extends JPanel {
 
@@ -102,7 +103,8 @@ public class DatascriptsTab extends JPanel {
 		//scriptsList.setB
 		scriptsList = new JList<DatascriptsTab.DatascriptItem>(model);
 		scriptsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		scriptsList.setPreferredSize(new Dimension(0, 150));
+//		scriptsList.setPreferredSize(new Dimension(0, 150));
+		scriptsList.setVisibleRowCount(10);
 		
 		scriptsList.addListSelectionListener(new ListSelectionListener() {
 			
@@ -329,7 +331,7 @@ public class DatascriptsTab extends JPanel {
 					System.out.println(title);
 				}
 
-				final ResultList results = Application.get().executeDatascript((String)selectedScript.script.getProperty("scriptPath"), runParamsF);
+				final ResultList results = Application.get().executeDatascript(selectedScript.script.getProperty("scriptPath").toString(), runParamsF);
 				
 				if(taskMonitor != null) {
 					taskMonitor.setProgress(1D);
@@ -407,7 +409,7 @@ public class DatascriptsTab extends JPanel {
 		@Override
 		public String toString() {
 			String n = null;//(String) script.getProperty("name");
-			String p = (String) script.getProperty("scriptPath");
+			String p = script.getProperty("scriptPath").toString();
 			if(p.startsWith("commons")) {
 				n += " (common)";
 			}
@@ -428,7 +430,8 @@ public class DatascriptsTab extends JPanel {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		Application.initForTests();
+//		VitalServiceFactory.setServiceProfile("vitalservice020wordnetprime");
+//		Application.initForTests(VitalServiceFactory.getVitalService());
 
 		DatascriptsTab panel = new DatascriptsTab();
 		
@@ -477,7 +480,7 @@ public class DatascriptsTab extends JPanel {
 			add(bottomPanelW, BorderLayout.SOUTH);
 			
 			if(rl.getStatus().getStatus() != VitalStatus.Status.ok) {
-				northPanel.add(new JLabel("<html><span style=\"color: red;\">ERROR: " + rl.getStatus().getMessage() + "</span></html>"));
+				northPanel.add(new JLabel("<html><span style=\"color: #CC3300;\">ERROR: " + rl.getStatus().getMessage() + "</span></html>"));
 				return;
 			}
 			
@@ -503,11 +506,16 @@ public class DatascriptsTab extends JPanel {
 			for(DatascriptInfo info : infos) {
 				i++;
 				s += ("<br/>" + i +":");
-				for(Object e : info.getProperties().entrySet()) {
-					Entry entry = (Entry) e;
-					String key= (String) entry.getKey();
-					PropertyInterface val = (PropertyInterface) entry.getValue();
-					s+= ( "   " + key + "=" + val.getValue());
+				for(Entry<String, IProperty> entry : info.getPropertiesMap().entrySet()) {
+					
+					String key = entry.getKey();
+					if(VitalCoreOntology.URIProp.getURI().equals(key)
+							|| VitalCoreOntology.types.getURI().equals(key)
+							|| VitalCoreOntology.vitaltype.getURI().equals(key)) {
+						continue;
+					}
+					IProperty val = entry.getValue().unwrapped();
+					s+= ( "   " + key + "=" + val.toString());
 				}
 				
 			}

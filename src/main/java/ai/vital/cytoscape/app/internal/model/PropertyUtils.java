@@ -7,17 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.model.GraphObject;
-import ai.vital.vitalsigns.model.PropertyInterface;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
 
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
+import com.hp.hpl.jena.ontology.OntProperty;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 public class PropertyUtils {
-	
-	public final static Property defaultLabelProperty = ResourceFactory.createProperty(VitalCoreOntology.NS + "isDefaultLabel");
 	
 	public static Map<Class<? extends GraphObject>, List<String>> cachedClass2PropertyName = Collections.synchronizedMap(new HashMap<Class<? extends GraphObject>, List<String>>());
 	
@@ -43,45 +42,51 @@ public class PropertyUtils {
 		try {
 			
 			//collect the label properties
-			for(Object o : entity.getProperties().entrySet()) {
-					
-				@SuppressWarnings("unchecked")
-				Entry<String, PropertyInterface> entry =  (Entry<String, PropertyInterface>) o;
+			for(Entry<String, IProperty> entry : entity.getPropertiesMap().entrySet()) {
 					
 				String n = entry.getKey();
-					
-				List<Object> values = VitalSigns.get().getPropertyAnnotationValues(entry.getValue(), defaultLabelProperty);
 				
-				if(values != null && values.size() > 0) {
-					Object v = values.get(0);
-					if(Boolean.TRUE.equals(v) || (v instanceof String &&"true".equalsIgnoreCase((String) v))) {
-							
-						//keep the property in the cache
-						if(pnames == null) {
-							pnames = new ArrayList<String>();
-							cachedClass2PropertyName.put(entity.getClass(), pnames);
-							pnames.add(n);
-						} else if( !pnames.contains(n)) {
-							pnames.add(n);
-						}
-						
-						val = entity.getProperty(n);
-						
-						if(val != null) {
-							return "" + val;
-						}
-									
-					}
-						
-				}
+				OntProperty ontProperty = VitalSigns.get().getOntologyModel().getOntProperty(n);
+				if(ontProperty != null) {
 					
+					for ( StmtIterator listProperties = ontProperty.listProperties(VitalCoreOntology.isDefaultLabel); listProperties.hasNext(); ) {
+						
+						Literal literal = listProperties.nextStatement().getLiteral();
+						Object v = literal.getValue();
+						
+						if(Boolean.TRUE.equals(v) || (v instanceof String &&"true".equalsIgnoreCase((String) v))) {
+							
+							//keep the property in the cache
+							if(pnames == null) {
+								pnames = new ArrayList<String>();
+								cachedClass2PropertyName.put(entity.getClass(), pnames);
+								pnames.add(n);
+							} else if( !pnames.contains(n)) {
+								pnames.add(n);
+							}
+							
+							val = entity.getProperty(n);
+							
+							if(val != null) {
+								return "" + val;
+							}
+										
+						}
+						
+					}
+					
+				}
+				
 			}
 			
-			return (String) entity.getProperty("name");
+			Object v = entity.getProperty("name");
+			if(v != null) return v.toString();
+			
+			return "";
 			
 		} catch(Exception e) {
 			
-			return "Unhandled: " + entity.toString();
+			return "Unhandled: " + entity.getClass().getCanonicalName();
 			
 		}
 		

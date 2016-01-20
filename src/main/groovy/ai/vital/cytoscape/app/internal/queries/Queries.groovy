@@ -27,6 +27,7 @@ import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion
 import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion.Comparator
 import static ai.vital.query.Utils.*
 
+
 class Queries {
 
 	static def builder = new VitalBuilder()
@@ -180,7 +181,10 @@ class Queries {
 		
 	}
 	
-	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, boolean _forward, boolean _reverse, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes, List<Class<? extends VITAL_Node>> nodeTypes) {
+	public static VitalGraphQuery connectionsQueyGraph(
+		List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, boolean _forward, boolean _reverse, 
+		List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes, List<Class<? extends VITAL_Node>> nodeTypes,
+		List<VitalGraphQueryTypeCriterion> exclusiveEdgeTypes, 	List<VitalGraphQueryTypeCriterion> exclusiveNodeTypes) {
 		
 		if(depth > 2) throw new RuntimeException("max depth 2 supported at this moment")
 		
@@ -230,6 +234,20 @@ class Queries {
 										}
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -240,6 +258,20 @@ class Queries {
 												
 											}
 												
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -264,6 +296,21 @@ class Queries {
 											
 										}
 										
+										if( exclusiveEdgeTypes.size() > 0 ) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+											
+													edge_constraint { tc }
+															
+												}
+												
+											}
+											
+										}
+										
+										
 										if(nodeTypes.size() > 0) {
 											
 											OR {
@@ -272,6 +319,20 @@ class Queries {
 												for(Class<? extends VITAL_Node> c : nodeTypes) {
 													
 													node_constraint { c }
+													
+												}
+												
+											}
+											
+										}
+										
+										if(exclusiveNodeTypes.size() > 0) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+													
+													node_constraint { tc }
 													
 												}
 												
@@ -303,6 +364,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -313,6 +388,20 @@ class Queries {
 												
 											}
 												
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -337,6 +426,20 @@ class Queries {
 											
 										}
 										
+										if( exclusiveEdgeTypes.size() > 0 ) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+											
+													edge_constraint { tc }
+															
+												}
+												
+											}
+											
+										}
+										
 										if(nodeTypes.size() > 0) {
 											
 											OR {
@@ -347,6 +450,20 @@ class Queries {
 													
 												}
 												
+												
+											}
+											
+										}
+										
+										if(exclusiveNodeTypes.size() > 0) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+													
+													node_constraint { tc }
+													
+												}
 												
 											}
 											
@@ -375,6 +492,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -385,6 +516,20 @@ class Queries {
 												
 											}
 												
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -409,6 +554,20 @@ class Queries {
 											
 										}
 										
+										if( exclusiveEdgeTypes.size() > 0 ) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+											
+													edge_constraint { tc }
+															
+												}
+												
+											}
+											
+										}
+										
 										if(nodeTypes.size() > 0) {
 											
 											OR {
@@ -416,6 +575,20 @@ class Queries {
 												for(Class<? extends VITAL_Node> c : nodeTypes) {
 													
 													node_constraint { c }
+													
+												}
+												
+											}
+											
+										}
+										
+										if(exclusiveNodeTypes.size() > 0) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+													
+													node_constraint { tc }
 													
 												}
 												
@@ -446,6 +619,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0 ) {
 										
 										OR {
@@ -455,6 +642,20 @@ class Queries {
 												node_constraint { c }
 												
 											}
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -479,6 +680,20 @@ class Queries {
 											
 										}
 										
+										if( exclusiveEdgeTypes.size() > 0 ) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+											
+													edge_constraint { tc }
+															
+												}
+												
+											}
+											
+										}
+										
 										if(nodeTypes.size() > 0) {
 											
 											OR {
@@ -486,6 +701,20 @@ class Queries {
 												for(Class<? extends VITAL_Node> c : nodeTypes) {
 													
 													node_constraint { c }
+													
+												}
+												
+											}
+											
+										}
+										
+										if(exclusiveNodeTypes.size() > 0) {
+											
+											AND {
+												
+												for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+													
+													node_constraint { tc }
 													
 												}
 												
@@ -516,6 +745,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -523,6 +766,20 @@ class Queries {
 											for(Class<? extends VITAL_Node> c : nodeTypes) {
 												
 												node_constraint { c }
+												
+											}
+											
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
 												
 											}
 											
@@ -551,6 +808,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -561,6 +832,20 @@ class Queries {
 												
 											}
 												
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -587,6 +872,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -598,6 +897,20 @@ class Queries {
 											}
 											
 										}
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
+										}
+										
 									}
 								}
 								
@@ -619,6 +932,20 @@ class Queries {
 										
 									}
 									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
 									if(nodeTypes.size() > 0) {
 										
 										OR {
@@ -629,6 +956,20 @@ class Queries {
 												
 											}
 												
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
 										}
 										
 									}
@@ -668,8 +1009,8 @@ class Queries {
 	
 							value direction: "forward"
 									
-							AND {
-													
+							if(forwardEdgeTypes.size() > 0) {
+								
 								OR {
 										
 									for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
@@ -679,12 +1020,45 @@ class Queries {
 									}
 									
 								}
-								
+
+							}								
+							
+							if( exclusiveEdgeTypes.size() > 0 ) {
+									
+								AND {
+										
+									for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+									
+										edge_constraint { tc }
+													
+									}
+										
+								}
+									
+							}
+							
+							if(nodeTypes.size() > 0 ) {
+									
 								OR {
 									
 									for(Class<? extends VITAL_Node> c : nodeTypes) {
 										
 										node_constraint { c }
+										
+									}
+									
+								}
+								
+								
+							}
+							
+							if(exclusiveNodeTypes.size() > 0) {
+								
+								AND {
+									
+									for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+										
+										node_constraint { tc }
 										
 									}
 									
@@ -700,7 +1074,7 @@ class Queries {
 									
 									value direction: "forward"
 										
-									AND {
+									if(forwardEdgeTypes.size() > 0) {
 										
 										OR {
 											
@@ -712,11 +1086,29 @@ class Queries {
 											
 										}
 										
+									}
+									
+									if(nodeTypes.size() > 0) {
+											
 										OR {
 											
 											for(Class<? extends VITAL_Node> c : nodeTypes) {
 												
 												node_constraint { c }
+												
+											}
+											
+										}
+										
+									}
+									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
 												
 											}
 											
@@ -759,8 +1151,8 @@ class Queries {
 
 							value direction: "reverse"
 									
-							AND {
-													
+							if(reverseEdgeTypes.size() > 0) {
+								
 								OR {
 										
 									for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
@@ -770,7 +1162,25 @@ class Queries {
 									}
 									
 								}
+
+							}
+							
+							if( exclusiveEdgeTypes.size() > 0 ) {
 								
+								AND {
+									
+									for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+								
+										edge_constraint { tc }
+												
+									}
+									
+								}
+								
+							}
+							
+							if(nodeTypes.size() > 0) {
+																
 								OR {
 									
 									for(Class<? extends VITAL_Node> c : nodeTypes) {
@@ -783,6 +1193,20 @@ class Queries {
 								
 							}
 							
+							if(exclusiveNodeTypes.size() > 0) {
+								
+								AND {
+									
+									for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+										
+										node_constraint { tc }
+										
+									}
+									
+								}
+								
+							}
+							
 							if(depth > 1) {
 								
 								ARC {
@@ -791,7 +1215,8 @@ class Queries {
 									
 									value direction: "reverse"
 										
-									AND {
+									if(reverseEdgeTypes.size() > 0 ) {
+										
 										
 										OR {
 											
@@ -802,6 +1227,26 @@ class Queries {
 											}
 											
 										}
+										
+									}
+									
+									
+									if( exclusiveEdgeTypes.size() > 0 ) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveEdgeTypes) {
+										
+												edge_constraint { tc }
+														
+											}
+											
+										}
+										
+									}
+									
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {	
 											for(Class<? extends VITAL_Node> c : nodeTypes) {
@@ -814,6 +1259,19 @@ class Queries {
 										
 									}
 									
+									if(exclusiveNodeTypes.size() > 0) {
+										
+										AND {
+											
+											for(VitalGraphQueryTypeCriterion tc : exclusiveNodeTypes) {
+												
+												node_constraint { tc }
+												
+											}
+											
+										}
+										
+									}
 								}
 							
 							}

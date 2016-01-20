@@ -3,6 +3,7 @@ package ai.vital.cytoscape.app.internal.app;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalGraphQuery;
+import ai.vital.vitalservice.query.VitalGraphQueryPropertyCriterion.Comparator;
 import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalsigns.VitalSigns;
@@ -385,10 +387,10 @@ public class Application {
 			log.info("all edge types optimization enabled");
 		} else {
 			//check direction and append type constraints
-			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+			if(forward) {
 				fClasses = edgeTypes;
 			}
-			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+			if(reverse) {
 				rClasses = edgeTypes;
 			}
 			
@@ -401,6 +403,47 @@ public class Application {
 			
 		} else {
 
+			
+		}
+		
+		List<VitalGraphQueryTypeCriterion> exclusiveEdgeTypes = new ArrayList<VitalGraphQueryTypeCriterion>();
+		List<VitalGraphQueryTypeCriterion> exclusiveNodeTypes = new ArrayList<VitalGraphQueryTypeCriterion>();
+		
+		if(EndpointType.ALLEGROGRAPH == Application.get().getVitalService().getEndpointType() ) {
+			
+			if(allEdgeTypes.size() != edgeTypes.size() && edgeTypes.size() > allEdgeTypes.size()  / 2) {
+				
+				log.info("Sparql endpoint exlusive edges queries optimization");
+				
+				for(Class<? extends VITAL_Edge> ec : allEdgeTypes) {
+					if(!edgeTypes.contains(ec)) {
+						VitalGraphQueryTypeCriterion vitalGraphQueryTypeCriterion = new VitalGraphQueryTypeCriterion(ec);
+						vitalGraphQueryTypeCriterion.setNegative(true);
+						exclusiveEdgeTypes.add(vitalGraphQueryTypeCriterion);
+					}
+				}
+				
+				fClasses = Collections.emptyList();
+				rClasses = Collections.emptyList();
+				
+			}
+			
+			if(allNodeTypes.size() != nodeTypes.size() && nodeTypes.size() > allNodeTypes.size() / 2) {
+				
+				log.info("Sparql endpoint exlusive nodes queries optimization");
+				
+				for(Class<? extends VITAL_Node> nc : allNodeTypes) {
+					if(!nodeTypes.contains(nc)) {
+						VitalGraphQueryTypeCriterion vitalGraphQueryTypeCriterion = new VitalGraphQueryTypeCriterion(nc);
+						vitalGraphQueryTypeCriterion.setNegative(true);
+						exclusiveNodeTypes.add(vitalGraphQueryTypeCriterion);
+					}
+					
+				}
+				
+				nodeTypes = Collections.emptyList();
+				
+			}
 			
 		}
 		
@@ -428,7 +471,8 @@ public class Application {
 //			rClasses.clear();
 //		}
 		
-		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, forward, reverse, fClasses, rClasses, nodeTypes);
+		
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, forward, reverse, fClasses, rClasses, nodeTypes, exclusiveEdgeTypes, exclusiveNodeTypes);
 		
 		
 		//XXX path query

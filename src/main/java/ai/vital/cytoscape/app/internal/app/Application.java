@@ -14,6 +14,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hp.hpl.jena.ontology.OntClass;
+import com.hp.hpl.jena.ontology.OntModel;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -42,10 +44,12 @@ import ai.vital.vitalsigns.model.GraphMatch;
 import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
+import ai.vital.vitalsigns.model.VitalApp;
 import ai.vital.vitalsigns.model.VitalSegment;
 import ai.vital.vitalsigns.model.property.IProperty;
 import ai.vital.vitalsigns.model.property.URIProperty;
 import ai.vital.vitalsigns.ontology.VitalCoreOntology;
+import ai.vital.vitalsigns.uri.URIGenerator;
 
 public class Application {
 
@@ -312,6 +316,12 @@ public class Application {
 		Map<String, GraphObject> resultsMap = new HashMap<String, GraphObject>();
 		
 		
+		List<Class<? extends VITAL_Edge>> fClasses = new ArrayList<Class<? extends VITAL_Edge>>();
+		List<Class<? extends VITAL_Edge>> rClasses = new ArrayList<Class<? extends VITAL_Edge>>();
+		
+		
+		/* taxonomy based approach */
+		/*
 		List<List<PathElement>> fPaths = null;
 		List<List<PathElement>> rPaths = null;
 		try {
@@ -335,9 +345,6 @@ public class Application {
 			return rs;
 		}
 		
-		List<Class<? extends VITAL_Edge>> fClasses = new ArrayList<Class<? extends VITAL_Edge>>();
-		List<Class<? extends VITAL_Edge>> rClasses = new ArrayList<Class<? extends VITAL_Edge>>();
-		
 		for(List<PathElement> p : fPaths) {
 			PathElement pe = p.get(0);
 			if(!pe.isHyperedge()) fClasses.add((Class<? extends VITAL_Edge>) pe.getEdgeClass());
@@ -347,7 +354,29 @@ public class Application {
 			PathElement pe = p.get(0);
 			if(!pe.isHyperedge()) rClasses.add((Class<? extends VITAL_Edge>) pe.getEdgeClass());
 		}
+		*/
 
+		List<Class<? extends VITAL_Node>> nodeTypes = VitalAICytoscapePlugin.getSelectedNodeTypes();
+		if(nodeTypes.isEmpty()) {
+			log.error("No node types selected");
+			return rs;
+		}
+		
+		List<Class<? extends VITAL_Edge>> edgeTypes = VitalAICytoscapePlugin.getSelectedEdgeTypes();
+		if(edgeTypes.isEmpty()) {
+			log.error("No edge types selected");
+			return rs;
+		}
+		
+		
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+			fClasses = edgeTypes;
+		}
+		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+			rClasses = edgeTypes;
+		}
+		
+		
 		if(fClasses.size() == 0 && rClasses.size() == 0) {
 //			log.warn("No path classes found, {}", typeURI);
 //			return rs;
@@ -375,7 +404,7 @@ public class Application {
 			rClasses.clear();
 		}
 		
-		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, fClasses, rClasses);
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, fClasses, rClasses, nodeTypes);
 		
 		
 		//XXX path query
@@ -634,7 +663,7 @@ public class Application {
 	
 	HierarchyNode root = new HierarchyNode();
 	
-	public HierarchyNode getClassHierarchy(Class<? extends GraphObject> rootClass) throws Exception {
+	public HierarchyNode getClassHierarchy(Class<? extends GraphObject> rootClass, boolean local) throws Exception {
 
 		//prefetch the entire tree
 
@@ -644,7 +673,7 @@ public class Application {
 				
 				if(root.URI == null) {
 					
-					initializeHierarchy();
+					initializeHierarchy(local);
 					
 				}
 				
@@ -678,11 +707,24 @@ public class Application {
 		return null;
 	}
 
-	private void initializeHierarchy() throws Exception {
+	private void initializeHierarchy(boolean local) throws Exception {
 		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("class", GraphObject.class.getCanonicalName());
-		ResultList rl = vitalService.callFunction("commons/scripts/GetClassHierarchy", params);
+		
+		ResultList rl = null;
+		
+		if(local) {
+			
+			rl = getLocalHierarchy();
+			
+		} else {
+			
+			rl = vitalService.callFunction("commons/scripts/GetClassHierarchy", params);
+			
+		}
+		
+				
 		
 		if(rl.getStatus().getStatus() != VitalStatus.Status.ok) throw new Exception("Vital service error: " + rl.getStatus().getMessage());
 		
@@ -724,6 +766,84 @@ public class Application {
 		root.URI = rootNode.getURI();
 		
 		processHierarchy(root, nodes, src2Dest);
+		
+	}
+
+	//adapted from commons.scripts.GetClassHierarchy datascript
+	private ResultList getLocalHierarchy() throws Exception {
+		
+		ResultList r = new ResultList();
+		
+		OntModel ontModel = VitalSigns.get().getOntologyModel();
+		
+		List<GraphObject> target = new ArrayList<GraphObject>();
+
+		collectSubclasses(null, GraphObject.class, ontModel, target);
+		
+		for(GraphObject g : target) {
+			r.getResults().add(new ResultElement(g, 1D));
+		}
+					
+		r.setTotalResults(target.size());
+		
+		return r;
+	}
+	
+	private void collectSubclasses(VITAL_Node parentClsNode, Class cls, OntModel ontModel, List<GraphObject> target) throws Exception {
+		
+		//add to target
+		VITAL_Node clsNode = new VITAL_Node();
+		clsNode.setProperty("name", cls.getCanonicalName());
+		
+		target.add(clsNode);
+		
+		
+		List<OntClass> subclasses = null;
+		
+		if(GraphObject.class.equals(cls)) {
+		
+			subclasses = new ArrayList<OntClass>();
+			
+			subclasses.add(ontModel.getOntClass(VitalCoreOntology.VITAL_Edge.getURI()));
+			subclasses.add(ontModel.getOntClass(VitalCoreOntology.VITAL_HyperEdge.getURI()));
+			subclasses.add(ontModel.getOntClass(VitalCoreOntology.VITAL_HyperNode.getURI()));
+			subclasses.add(ontModel.getOntClass(VitalCoreOntology.VITAL_Node.getURI()));
+			
+			//virtual node!
+			clsNode.setURI(VitalCoreOntology.NS + "GraphObject");
+			
+		} else {
+		
+			String clsURI = VitalSigns.get().getClassesRegistry().getClassURI(cls);
+			if(clsURI == null || clsURI.isEmpty()) throw new Exception("No URI of class: " + cls.getCanonicalName() + " found");
+			
+			OntClass ontCls = ontModel.getOntClass(clsURI);
+			
+			if(ontCls == null) throw new Exception("Ont class not found: " + clsURI + ", " + cls.getCanonicalName()); 
+		
+			subclasses = ontCls.listSubClasses(true).toList();
+			
+			clsNode.setURI(ontCls.getURI());			
+				
+		}
+		
+		if(parentClsNode != null) {
+			VITAL_Edge e = new VITAL_Edge().addSource(parentClsNode).addDestination(clsNode);
+			e.generateURI((VitalApp)null);
+			target.add(e);
+			
+		}
+		
+		for(OntClass c : subclasses) {
+		
+			ClassMetadata sc = VitalSigns.get().getClassesRegistry().getClass(c.getURI());
+			
+			if(sc == null) throw new Exception("No groovy class found for URI: " + c.getURI());
+			
+			collectSubclasses(clsNode, sc.getClazz(), ontModel, target);	
+		
+		}
+		
 		
 	}
 

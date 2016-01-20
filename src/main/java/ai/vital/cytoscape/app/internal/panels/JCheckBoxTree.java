@@ -16,11 +16,14 @@ import javax.swing.JPanel;
 import javax.swing.JTree;
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+
+import ai.vital.cytoscape.app.internal.panels.JCheckBoxTree.CheckChangeEvent;
 
 /**
  * Source: http://stackoverflow.com/questions/21847411/java-swing-need-a-good-quality-developed-jtree-with-checkboxes
@@ -196,7 +199,20 @@ public class JCheckBoxTree extends JTree {
             }           
         });
         this.setSelectionModel(dtsm);
+        
     }
+    
+    public void selectRootNode() {
+    	TreePath tp = selfPointer.getPathForRow(0);
+    	boolean checkMode = true;
+        checkSubTree(tp, checkMode);
+        updatePredecessorsWithCheckMode(tp, checkMode);
+        // Firing the check change event
+        fireCheckChangeEvent(new CheckChangeEvent(new Object()));
+        // Repainting tree after the data structures were updated
+        selfPointer.repaint();       
+    }
+    		
 
     // When a node is checked/unchecked, updating the states of the predecessors
     protected void updatePredecessorsWithCheckMode(TreePath tp, boolean check) {
@@ -255,21 +271,71 @@ public class JCheckBoxTree extends JTree {
             super();
             setSize(500, 500);
             this.getContentPane().setLayout(new BorderLayout());
-            final JCheckBoxTree cbt = new JCheckBoxTree();
+//            final JCheckBoxTree cbt = new JCheckBoxTree(true);
+//            
+//            this.getContentPane().add(cbt);
+////            edgesModel.nodeStructureChanged(edgesRoot);
+//            cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
+//                public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
+//                    System.out.println("event");
+//                    TreePath[] paths = cbt.getCheckedPaths();
+//                    for (TreePath tp : paths) {
+//                        for (Object pathPart : tp.getPath()) {
+//                            System.out.print(pathPart + ",");
+//                        }                   
+//                        System.out.println();
+//                    }
+//                }           
+//            }); 
             
-            this.getContentPane().add(cbt);
-            cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
-                public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
-                    System.out.println("event");
-                    TreePath[] paths = cbt.getCheckedPaths();
-                    for (TreePath tp : paths) {
-                        for (Object pathPart : tp.getPath()) {
-                            System.out.print(pathPart + ",");
-                        }                   
-                        System.out.println();
-                    }
-                }           
-            });         
+			final JCheckBoxTree edgesTree = new JCheckBoxTree();
+//			nodesTree.setMinimumSize(new Dimension(200, 0));
+				edgesTree.setRootVisible(true);
+				DefaultMutableTreeNode edgesRoot = new DefaultMutableTreeNode("XXX", true);
+				DefaultMutableTreeNode yyy1 = new DefaultMutableTreeNode("YYY1");
+				edgesRoot.add(yyy1);
+				yyy1.add(new DefaultMutableTreeNode("zzz1"));
+				yyy1.add(new DefaultMutableTreeNode("zzz2"));
+				edgesRoot.add(new DefaultMutableTreeNode("YYY2"));
+				edgesRoot.add(new DefaultMutableTreeNode("YYY3"));
+//				initTree(edgesRoot);
+				DefaultTreeModel edgesModel = new DefaultTreeModel(edgesRoot, false);
+				edgesTree.setModel(edgesModel);
+				
+				this.getContentPane().add(edgesTree);
+				edgesModel.nodeStructureChanged(edgesRoot);
+				
+				TreePath pathForRow = edgesTree.getPathForRow(0);
+				
+				edgesTree.addCheckChangeEventListener(new CheckChangeEventListener() {
+					
+					@Override
+					public void checkStateChanged(CheckChangeEvent event) {
+
+						TreePath[] checkedPaths2 = edgesTree.getCheckedPaths();
+						
+						String s = "";
+						for(TreePath tp : checkedPaths2) {
+						}
+						
+						System.out.println( "Paths: " + checkedPaths2.length + ": " + s);
+						
+						System.out.println(edgesTree.getSelectionCount());
+						
+					}
+				});
+				System.out.println(pathForRow);
+				
+				edgesTree.getSelectionModel().setSelectionPath(pathForRow);
+				
+				edgesModel.nodeStructureChanged(edgesRoot);
+
+				edgesTree.selectRootNode();
+				
+				
+				
+//				edgesTree.setSelectionPath(pathForRow);
+				
             this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         }
 

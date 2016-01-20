@@ -17,6 +17,7 @@ import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalPathQuery;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalsigns.model.VITAL_Edge;
+import ai.vital.vitalsigns.model.VITAL_Node
 import ai.vital.vitalsigns.model.VitalSegment
 import ai.vital.vitalsigns.properties.PropertyMetadata;
 import ai.vital.vitalsigns.properties.PropertyTrait;
@@ -179,7 +180,7 @@ class Queries {
 		
 	}
 	
-	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes) {
+	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes, List<Class<? extends VITAL_Node>> nodeTypes) {
 		
 		if(depth > 2) throw new RuntimeException("max depth 2 supported at this moment")
 		
@@ -226,6 +227,16 @@ class Queries {
 												edge_constraint { c }
 													
 											}
+											
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
 												
 										}
 										
@@ -247,6 +258,16 @@ class Queries {
 													
 												}
 												
+											}
+											
+											OR {
+												
+												
+												for(Class<? extends VITAL_Node> c : nodeTypes) {
+													
+													node_constraint { c }
+													
+												}
 												
 											}
 											
@@ -271,6 +292,16 @@ class Queries {
 												edge_constraint { c }
 													
 											}
+											
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
 												
 										}
 										
@@ -289,6 +320,16 @@ class Queries {
 												for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
 													
 													edge_constraint { c }
+													
+												}
+												
+											}
+											
+											OR {
+												
+												for(Class<? extends VITAL_Node> c : nodeTypes) {
+													
+													node_constraint { c }
 													
 												}
 												
@@ -315,6 +356,16 @@ class Queries {
 												edge_constraint { c }
 													
 											}
+											
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
 												
 										}
 										
@@ -336,6 +387,15 @@ class Queries {
 													
 												}
 												
+											}
+											
+											OR {
+												
+												for(Class<? extends VITAL_Node> c : nodeTypes) {
+													
+													node_constraint { c }
+													
+												}
 												
 											}
 											
@@ -359,7 +419,16 @@ class Queries {
 												edge_constraint { c }
 													
 											}
+									
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
 												
+												node_constraint { c }
+												
+											}
 										}
 										
 									}
@@ -380,6 +449,15 @@ class Queries {
 													
 												}
 												
+											}
+											
+											OR {
+												
+												for(Class<? extends VITAL_Node> c : nodeTypes) {
+													
+													node_constraint { c }
+													
+												}
 												
 											}
 											
@@ -404,6 +482,16 @@ class Queries {
 													
 											}
 												
+										} 
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
+											
 										}
 									}
 								}
@@ -422,6 +510,16 @@ class Queries {
 													
 												edge_constraint { c }
 													
+											}
+											
+										} 
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
 											}
 												
 										}
@@ -447,6 +545,16 @@ class Queries {
 											}
 												
 										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
+											
+										}
 									}
 								}
 								
@@ -462,6 +570,16 @@ class Queries {
 													
 												edge_constraint { c }
 													
+											}
+											
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
 											}
 												
 										}
@@ -512,7 +630,17 @@ class Queries {
 										edge_constraint { c }
 											
 									}
+									
+								}
+								
+								OR {
+									
+									for(Class<? extends VITAL_Node> c : nodeTypes) {
 										
+										node_constraint { c }
+										
+									}
+									
 								}
 								
 							}
@@ -535,6 +663,15 @@ class Queries {
 												
 											}
 											
+										}
+										
+										OR {
+											
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
+												
+											}
 											
 										}
 										
@@ -584,6 +721,16 @@ class Queries {
 										edge_constraint { c }
 											
 									}
+									
+								}
+								
+								OR {
+									
+									for(Class<? extends VITAL_Node> c : nodeTypes) {
+										
+										node_constraint { c }
+										
+									}
 										
 								}
 								
@@ -604,6 +751,15 @@ class Queries {
 											for(Class<? extends VITAL_Edge> c : reverseEdgeTypes) {
 												
 												edge_constraint { c }
+												
+											}
+											
+										}
+										
+										OR {	
+											for(Class<? extends VITAL_Node> c : nodeTypes) {
+												
+												node_constraint { c }
 												
 											}
 											

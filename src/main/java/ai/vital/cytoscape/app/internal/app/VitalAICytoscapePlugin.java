@@ -37,6 +37,8 @@ import ai.vital.cytoscape.app.internal.tabs.PathsTab;
 import ai.vital.cytoscape.app.internal.tabs.PathsTab.ExpansionDirection;
 import ai.vital.cytoscape.app.internal.tabs.SearchTab;
 import ai.vital.vitalservice.EndpointType;
+import ai.vital.vitalsigns.model.VITAL_Edge;
+import ai.vital.vitalsigns.model.VITAL_Node;
 import ai.vital.vitalsigns.model.VitalSegment;
 
 public class VitalAICytoscapePlugin extends Thread implements LoginListener, PropertyChangeListener {
@@ -581,5 +583,17 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 			return emptyList;
 		}
 		return singleton.pathsTab.getSegmentsPanel().getSelectedSegments();
+	}
+
+
+
+	public static List<Class<? extends VITAL_Edge>> getSelectedEdgeTypes() {
+		if(singleton == null || singleton.pathsTab == null) return Collections.emptyList();
+		return singleton.pathsTab.getSelectedEdgeTypes();
+	}
+	
+	public static List<Class<? extends VITAL_Node>> getSelectedNodeTypes() {
+		if(singleton == null || singleton.pathsTab == null) return Collections.emptyList();
+		return singleton.pathsTab.getSelectedNodeTypes();
 	}
 }

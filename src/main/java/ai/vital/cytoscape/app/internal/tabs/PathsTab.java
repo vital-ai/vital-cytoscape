@@ -2,28 +2,27 @@ package ai.vital.cytoscape.app.internal.tabs;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 import ai.vital.cytoscape.app.internal.app.Application;
 import ai.vital.cytoscape.app.internal.app.Application.HierarchyNode;
 import ai.vital.cytoscape.app.internal.panels.JCheckBoxTree;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
-import ai.vital.domain.ontology.VitalOntology;
 import ai.vital.vitalservice.EndpointType;
-import ai.vital.vitalservice.exception.VitalServiceException;
-import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
-import ai.vital.vitalservice.factory.VitalServiceFactory;
-import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
 
@@ -36,6 +35,9 @@ public class PathsTab extends JPanel {
 	private JComboBox<ExpansionDirection> directionBox;
 	
 	private JComboBox<Integer> depthBox;
+	
+	private JCheckBoxTree nodesTree = new JCheckBoxTree();
+	private JCheckBoxTree edgesTree = new JCheckBoxTree();
 	
 	public PathsTab() {
 		
@@ -86,11 +88,14 @@ public class PathsTab extends JPanel {
 		
 		
 		//filters available only in prime endpoint
-		if( EndpointType.VITALPRIME == Application.get().getEndpointType()) {
+//		if( true ) {
+			
+			boolean local = EndpointType.VITALPRIME != Application.get().getEndpointType();
 			
 			HierarchyNode nodesHierarchy = null;
+			
 			try {
-				nodesHierarchy = Application.get().getClassHierarchy(VITAL_Node.class);
+				nodesHierarchy = Application.get().getClassHierarchy(VITAL_Node.class, local);
 			} catch (Exception e) {
 				nodesHierarchy = new HierarchyNode();
 				JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "Nodes hierarchy error", JOptionPane.ERROR_MESSAGE);
@@ -98,15 +103,12 @@ public class PathsTab extends JPanel {
 			
 			HierarchyNode edgesHierarchy = null;
 			try {
-				edgesHierarchy = Application.get().getClassHierarchy(VITAL_Edge.class);
+				edgesHierarchy = Application.get().getClassHierarchy(VITAL_Edge.class, local);
 			} catch (Exception e) {
 				edgesHierarchy = new HierarchyNode();
 				JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "Edges hierarchy error", JOptionPane.ERROR_MESSAGE);
-			}		
-			
-			
-			
-			JCheckBoxTree nodesTree = new JCheckBoxTree();
+			}
+				
 			nodesTree.setMinimumSize(new Dimension(200, 0));
 			nodesTree.setRootVisible(true);
 			DefaultMutableTreeNode nodesRoot = new DefaultMutableTreeNode(nodesHierarchy, true);
@@ -116,7 +118,7 @@ public class PathsTab extends JPanel {
 			nodesTree.setModel(nodesModel);
 			
 			nodesModel.nodeStructureChanged(nodesRoot);
-			
+			nodesTree.selectRootNode();
 			
 //		JPanel nodesTreeWrapper = new JPanel(new BorderLayout());
 			JScrollPane sp = new JScrollPane(nodesTree);
@@ -127,7 +129,6 @@ public class PathsTab extends JPanel {
 			
 			
 			
-			JCheckBoxTree edgesTree = new JCheckBoxTree();
 //		nodesTree.setMinimumSize(new Dimension(200, 0));
 			edgesTree.setRootVisible(true);
 			DefaultMutableTreeNode edgesRoot = new DefaultMutableTreeNode(edgesHierarchy, true);
@@ -136,6 +137,7 @@ public class PathsTab extends JPanel {
 			edgesTree.setModel(edgesModel);
 			
 			edgesModel.nodeStructureChanged(edgesRoot);
+			edgesTree.selectRootNode();
 			
 			JScrollPane sp2 = new JScrollPane(edgesTree);
 			sp2.setPreferredSize(new Dimension(0, 200));
@@ -147,11 +149,11 @@ public class PathsTab extends JPanel {
 			
 			//
 			
-		} else {
-			
-			northPanel.add(new JLabel("   nodes and edges filter available only with vital prime endpoint"));
-			
-		}
+//		} else {
+//			
+//			northPanel.add(new JLabel("   nodes and edges filter available only with vital prime endpoint"));
+//			
+//		}
 		
 		add(northPanel, BorderLayout.NORTH);
 		
@@ -162,6 +164,13 @@ public class PathsTab extends JPanel {
 
 		HierarchyNode w = (HierarchyNode) nodesRoot.getUserObject();
 
+		Collections.sort(w.children, new Comparator<HierarchyNode>() {
+			@Override
+			public int compare(HierarchyNode o1, HierarchyNode o2) {
+				return o1.cls.getSimpleName().compareTo(o2.cls.getSimpleName());
+			}
+		});
+		
 		for(HierarchyNode c : w.children) {
 			
 			DefaultMutableTreeNode n = new DefaultMutableTreeNode(c, true);
@@ -178,35 +187,6 @@ public class PathsTab extends JPanel {
 		return segmentsPanel;
 	}
 	
-	/*
-	public static void main(String[] args) throws VitalServiceException, VitalServiceUnimplementedException {
-		
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		VitalServiceFactory.setServiceProfile("vitaldevelopmentprime");
-		
-		Application.initForTests(VitalServiceFactory.getVitalService());
-
-		PathsTab panel = new PathsTab();
-
-		panel.getSegmentsPanel().setSegmentsList(Application.get().getServiceSegments());
-		
-		panel.setSize(400, 400);
-
-		frame.setMinimumSize(new Dimension(800, 600));
-		frame.setSize(800, 600);
-		frame.getContentPane().add(panel);
-		frame.pack();
-		frame.setVisible(true);
-		
-
-//		ResultList rl = Application.get().getConnections("xxx", VitalOntology.NS + "Entity");
-//		System.out.println(rl.toString());
-		
-	}
-	*/
-
 	public static enum ExpansionDirection {
 		Both,
 		Outgoing,
@@ -219,5 +199,35 @@ public class PathsTab extends JPanel {
 	
 	public Integer getDepth() {
 		return (Integer) depthBox.getSelectedItem();
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Class<? extends VITAL_Edge>> getSelectedEdgeTypes() {
+		List<Class<? extends VITAL_Edge>> l = new ArrayList<Class<? extends VITAL_Edge>>();
+		for( TreePath path : edgesTree.getCheckedPaths() ) {
+			Object[] path2 = path.getPath();
+			for(Object obj : path2) {
+				DefaultMutableTreeNode tn = (DefaultMutableTreeNode) obj;
+				HierarchyNode hn = (HierarchyNode) tn.getUserObject();
+				if(l.contains(hn.cls)) continue;
+				l.add((Class<? extends VITAL_Edge>) hn.cls);
+			}
+		}
+		return l;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Class<? extends VITAL_Node>> getSelectedNodeTypes() {
+		List<Class<? extends VITAL_Node>> l = new ArrayList<Class<? extends VITAL_Node>>();
+		for( TreePath path : nodesTree.getCheckedPaths() ) {
+			Object[] path2 = path.getPath();
+			for(Object obj : path2) {
+				DefaultMutableTreeNode tn = (DefaultMutableTreeNode) obj;
+				HierarchyNode hn = (HierarchyNode) tn.getUserObject();
+				if(l.contains(hn.cls)) continue;
+				l.add((Class<? extends VITAL_Node>) hn.cls);
+			}
+		}
+		return l;
 	}
 }

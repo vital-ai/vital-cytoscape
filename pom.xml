@@ -140,6 +140,17 @@
                   <include>vital-ai:vital-lucene:*</include>
                   <include>vital-ai:vital-sparql:*</include>
 		  		  <include>vital-ai:vital-sql:*</include>
+		  		  
+		  		  <include>vital-ai:vital-dynamodb:*</include>
+
+				  <include>com.amazonaws:aws-java-sdk-dynamodb:*</include>
+				  <include>com.amazonaws.services.dynamodbv2:amazon-dynamodb-transactions:*</include>
+				  <include>com.amazonaws:aws-java-sdk-s3:*</include>
+				  <include>com.amazonaws:aws-java-sdk-kms:*</include>
+				  <include>com.amazonaws:aws-java-sdk-core:*</include>
+				  <include>org.apache.httpcomponents:httpclient:*</include>
+				  <include>org.apache.httpcomponents:httpcore:*</include>
+				  <include>joda-time:joda-time:*</include>
                   
                   <include>org.openrdf.sesame:*</include>
                   
@@ -270,6 +281,16 @@
       				<artifactId>org.codehaus.groovy</artifactId>
       				<groupId>groovy-all</groupId>
       			</exclusion>
+      			
+      			<!-- conflict with dynamodb -->
+      			<exclusion>
+      				<groupId>org.apache.httpcomponents</groupId>
+      				<artifactId>httpclient</artifactId>
+      			</exclusion>
+      			<exclusion>
+      				<groupId>org.apache.httpcomponents</groupId>
+      				<artifactId>httpcore</artifactId>
+      			</exclusion>
       		</exclusions>
     	</dependency>
     	
@@ -301,11 +322,17 @@
     	</dependency>   
 
 
-	<dependency>
-                <groupId>vital-ai</groupId>
-                <artifactId>vital-sql</artifactId>
-                <version>${vital.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>vital-ai</groupId>
+			<artifactId>vital-sql</artifactId>
+			<version>${vital.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>vital-ai</groupId>
+			<artifactId>vital-dynamodb</artifactId>
+			<version>${vital.version}</version>
+		</dependency>
 
 
 

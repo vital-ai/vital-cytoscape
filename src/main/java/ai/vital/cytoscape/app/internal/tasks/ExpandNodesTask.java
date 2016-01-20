@@ -30,6 +30,7 @@ import ai.vital.cytoscape.app.internal.app.VitalAICytoscapePlugin;
 import ai.vital.cytoscape.app.internal.model.Attributes;
 import ai.vital.cytoscape.app.internal.model.Utils;
 import ai.vital.cytoscape.app.internal.model.VisualStyleUtils;
+import ai.vital.vitalservice.VitalStatus;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalsigns.model.GraphObject;
@@ -46,10 +47,7 @@ public class ExpandNodesTask implements Task {
 	
 	private TaskMonitor taskMonitor;
 
-	//XXX
-//	private boolean isInterrupted;
-	
-	private ExpansionThread thread;
+//	private ExpansionThread thread;
 
 	private String title = "";
 	
@@ -60,6 +58,8 @@ public class ExpandNodesTask implements Task {
 	public final static int MARKED_ONLY = 2;
 	
 	private LinkedHashSet<Long> selectedIndices = new LinkedHashSet<Long>();
+
+	private boolean isInterrupted = false;
 	
 	public ExpandNodesTask() {
 
@@ -88,35 +88,31 @@ public class ExpandNodesTask implements Task {
 			title = "Expanding to selected nodes... ";
 		}
 		
-		obj.getModel().getNetworkPointer();
-		
 	}
 
 	public String getTitle() {
 		return title;
 	}
 
-	@SuppressWarnings("deprecation")
 	public void halt() {
-//		isInterrupted = true;
-		thread.stop();
+		isInterrupted = true;
 	}
 
-	public void run() {
-		this.thread = new ExpansionThread();
-		
-		thread.start();
-		
-		
-		while(thread.isAlive()) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		
-	}
+//	public void run() {
+//		this.thread = new ExpansionThread();
+//		
+//		thread.start();
+//		
+//		
+//		while(thread.isAlive()) {
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		
+//	}
 
 	public void setTaskMonitor(TaskMonitor arg0)
 			throws IllegalThreadStateException {
@@ -355,9 +351,11 @@ public class ExpandNodesTask implements Task {
 	}
 
 
-	private class ExpansionThread extends Thread {
-
-		@Override
+//	private class ExpansionThread extends Thread {
+//
+//		private boolean isInterrupted = false;
+//		
+//		@Override
 		public void run() {
 
 	        taskMonitor.setProgress(-1D);
@@ -500,6 +498,12 @@ public class ExpandNodesTask implements Task {
 	        
 			while (i.hasNext()) {
 				
+				if(	isInterrupted ) {
+					log.warn("Task Cancelled");
+					break;
+				}
+				
+				
 				taskMonitor.setStatusMessage("Expanding node " + (processed_nodes+1) + " of " + size);
 				
 				log.debug("Expanding node " + (processed_nodes+1) + " of " + size);
@@ -544,14 +548,43 @@ public class ExpandNodesTask implements Task {
 						
 						while(offset >= 0) {
 							
+							if(isInterrupted) {
+								break;
+							}
+							
 							List<GraphObject> objects = new ArrayList<GraphObject>();
 							//get filters and direction from path tab
 							long s = System.currentTimeMillis();
-							ResultList rs_connections = Application.get().getConnections(uri_str, typeURI, offset, limit);
+							
+							
+							GetConnectionsThread thread = new GetConnectionsThread(uri_str, typeURI, offset, limit);
+							thread.start();
+							
+							ResultList rs_connections = null;
+							
+							while(rs_connections == null && !isInterrupted) {
+
+								try {
+									Thread.sleep(1);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+								
+								rs_connections = thread.rl;
+								
+							}
+							
+							if(rs_connections == null) {
+								break;
+							}
+							
+							
+//							ResultList rs_connections = Application.get().getConnections(uri_str, typeURI, offset, limit);
 							for(ResultElement g : rs_connections.getResults()) {
 								objects.add(g.getGraphObject());
 							}
 							
+							//limit is set by application
 							boolean more = rs_connections.getLimit().intValue() >= 0; 
 							
 							log.info("Results fetch {} - {} time: {}ms, has more ? {}", new Object[]{offset, offset + limit, System.currentTimeMillis() - s, more});
@@ -583,11 +616,6 @@ public class ExpandNodesTask implements Task {
 					
 					
 				}
-				
-				
-				
-				
-				
 				
 				percentage = percentage + step;
 				
@@ -629,7 +657,7 @@ public class ExpandNodesTask implements Task {
 			
 		}
 		
-	}
+//	}
 
 
 	@Override
@@ -646,4 +674,35 @@ public class ExpandNodesTask implements Task {
 		
 	}
 
+	static class GetConnectionsThread extends Thread {
+		
+		public ResultList rl = null;
+		
+		private String fUri_str;
+		private String fTypeURI;
+		private int fOffset;
+		private int fLimit;
+		
+		public GetConnectionsThread(String fUri_str, String fTypeURI, int fOffset, int fLimit) {
+			super();
+			this.fUri_str = fUri_str;
+			this.fTypeURI = fTypeURI;
+			this.fOffset = fOffset;
+			this.fLimit = fLimit;
+		}
+
+		@Override
+		public void run() {
+
+			try {
+				rl = Application.get().getConnections(fUri_str, fTypeURI, fOffset, fLimit);
+			} catch(Throwable e) {
+				log.error(e.getLocalizedMessage(), e);
+				rl = new ResultList();
+				rl.setStatus(VitalStatus.withError(e.getLocalizedMessage()));
+			}
+			
+		}
+		
+	}
 }

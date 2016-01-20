@@ -180,7 +180,7 @@ class Queries {
 		
 	}
 	
-	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes, List<Class<? extends VITAL_Node>> nodeTypes) {
+	public static VitalGraphQuery connectionsQueyGraph(List<VitalSegment> segments, String inputURI, Integer depth, int offset, int limit, boolean _forward, boolean _reverse, List<Class<? extends VITAL_Edge>> forwardEdgeTypes, List<Class<? extends VITAL_Edge>> reverseEdgeTypes, List<Class<? extends VITAL_Node>> nodeTypes) {
 		
 		if(depth > 2) throw new RuntimeException("max depth 2 supported at this moment")
 		
@@ -190,7 +190,7 @@ class Queries {
 		
 		//both
 		
-		if(forwardEdgeTypes.size() > 0 && reverseEdgeTypes.size() > 0) {
+		if( _forward && _reverse ) {
 			
 			
 			graphQueryObj = builder.query {
@@ -217,9 +217,8 @@ class Queries {
 								ARC {
 		
 									value direction: "forward"
-											
-									AND {
-															
+
+									if( forwardEdgeTypes.size() > 0 ) {
 										OR {
 												
 											for(Class<? extends VITAL_Edge> c : forwardEdgeTypes) {
@@ -229,6 +228,9 @@ class Queries {
 											}
 											
 										}
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -241,14 +243,14 @@ class Queries {
 										}
 										
 									}
-									
+										
 									ARC {
 											
 //										value optional: true
 											
 										value direction: "forward"
 											
-										AND {
+										if(forwardEdgeTypes.size() > 0) {
 											
 											OR {
 												
@@ -259,6 +261,10 @@ class Queries {
 												}
 												
 											}
+											
+										}
+										
+										if(nodeTypes.size() > 0) {
 											
 											OR {
 												
@@ -283,7 +289,7 @@ class Queries {
 									
 									value direction: "forward"
 											
-									AND {
+									if(forwardEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -294,6 +300,10 @@ class Queries {
 											}
 											
 										}
+										
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -313,7 +323,7 @@ class Queries {
 										
 										value direction: "reverse"
 											
-										AND {
+										if(reverseEdgeTypes.size() > 0) {
 											
 											OR {
 												
@@ -324,6 +334,10 @@ class Queries {
 												}
 												
 											}
+											
+										}
+										
+										if(nodeTypes.size() > 0) {
 											
 											OR {
 												
@@ -347,7 +361,7 @@ class Queries {
 		
 //									value direction: "reverse"
 											
-									AND {
+									if(reverseEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -358,6 +372,10 @@ class Queries {
 											}
 											
 										}
+										
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -377,7 +395,7 @@ class Queries {
 										
 										value direction: "forward"
 											
-										AND {
+										if(forwardEdgeTypes.size() > 0) {
 											
 											OR {
 												
@@ -388,6 +406,10 @@ class Queries {
 												}
 												
 											}
+											
+										}
+										
+										if(nodeTypes.size() > 0) {
 											
 											OR {
 												
@@ -410,7 +432,7 @@ class Queries {
 		
 									value direction: "reverse"
 											
-									AND {
+									if(reverseEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -421,6 +443,10 @@ class Queries {
 											}
 									
 										}
+										
+									}
+									
+									if(nodeTypes.size() > 0 ) {
 										
 										OR {
 											
@@ -439,7 +465,7 @@ class Queries {
 										
 										value direction: "reverse"
 											
-										AND {
+										if(reverseEdgeTypes.size() > 0) {
 											
 											OR {
 												
@@ -450,6 +476,10 @@ class Queries {
 												}
 												
 											}
+											
+										}
+										
+										if(nodeTypes.size() > 0) {
 											
 											OR {
 												
@@ -472,7 +502,7 @@ class Queries {
 									
 									value direction: "forward"
 											
-									AND {
+									if(forwardEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -484,6 +514,10 @@ class Queries {
 												
 										} 
 										
+									}
+									
+									if(nodeTypes.size() > 0) {
+										
 										OR {
 											
 											for(Class<? extends VITAL_Node> c : nodeTypes) {
@@ -493,6 +527,7 @@ class Queries {
 											}
 											
 										}
+										
 									}
 								}
 								
@@ -502,7 +537,7 @@ class Queries {
 									
 									value direction: "reverse"
 											
-									AND {
+									if(reverseEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -513,6 +548,10 @@ class Queries {
 											}
 											
 										} 
+										
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -534,7 +573,7 @@ class Queries {
 								
 									value direction: "forward"
 											
-									AND {
+									if(forwardEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -545,6 +584,10 @@ class Queries {
 											}
 												
 										}
+										
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -562,7 +605,7 @@ class Queries {
 									
 									value direction: "reverse"
 											
-									AND {
+									if(reverseEdgeTypes.size() > 0) {
 															
 										OR {
 												
@@ -573,6 +616,10 @@ class Queries {
 											}
 											
 										}
+										
+									}
+									
+									if(nodeTypes.size() > 0) {
 										
 										OR {
 											
@@ -598,7 +645,7 @@ class Queries {
 				
 			}
 			
-		} else if(forwardEdgeTypes.size() > 0) {
+		} else if( _forward ) {
 		
 			graphQueryObj = builder.query {
 				
@@ -689,7 +736,7 @@ class Queries {
 				
 			}
 			
-		} else if(reverseEdgeTypes.size() > 0) {
+		} else if( _reverse ) {
 		
 			graphQueryObj = builder.query {
 				

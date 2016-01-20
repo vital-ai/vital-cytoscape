@@ -23,6 +23,7 @@ import ai.vital.cytoscape.app.internal.app.Application.HierarchyNode;
 import ai.vital.cytoscape.app.internal.panels.JCheckBoxTree;
 import ai.vital.cytoscape.app.internal.panels.SegmentsPanel;
 import ai.vital.vitalservice.EndpointType;
+import ai.vital.vitalsigns.model.GraphObject;
 import ai.vital.vitalsigns.model.VITAL_Edge;
 import ai.vital.vitalsigns.model.VITAL_Node;
 
@@ -38,6 +39,10 @@ public class PathsTab extends JPanel {
 	
 	private JCheckBoxTree nodesTree = new JCheckBoxTree();
 	private JCheckBoxTree edgesTree = new JCheckBoxTree();
+
+	private List<Class<? extends VITAL_Edge>> allEdgeTypes = new ArrayList<Class<? extends VITAL_Edge>>();
+	
+	private List<Class<? extends VITAL_Node>> allNodeTypes = new ArrayList<Class<? extends VITAL_Node>>();
 	
 	public PathsTab() {
 		
@@ -164,6 +169,16 @@ public class PathsTab extends JPanel {
 
 		HierarchyNode w = (HierarchyNode) nodesRoot.getUserObject();
 
+		Class<? extends GraphObject> cls = w.cls;
+		
+		if(VITAL_Node.class.isAssignableFrom(cls)) {
+			allNodeTypes.add((Class<? extends VITAL_Node>) cls);
+		} else if(VITAL_Edge.class.isAssignableFrom(cls)) {
+			allEdgeTypes.add((Class<? extends VITAL_Edge>) cls);
+		}
+		
+		
+		
 		Collections.sort(w.children, new Comparator<HierarchyNode>() {
 			@Override
 			public int compare(HierarchyNode o1, HierarchyNode o2) {
@@ -229,5 +244,13 @@ public class PathsTab extends JPanel {
 			}
 		}
 		return l;
+	}
+
+	public List<Class<? extends VITAL_Edge>> getAllEdgeTypes() {
+		return allEdgeTypes;
+	}
+
+	public List<Class<? extends VITAL_Node>> getAllNodeTypes() {
+		return allNodeTypes;
 	}
 }

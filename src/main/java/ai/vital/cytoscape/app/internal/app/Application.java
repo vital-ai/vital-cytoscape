@@ -32,6 +32,7 @@ import ai.vital.vitalservice.exception.VitalServiceUnimplementedException;
 import ai.vital.vitalservice.query.ResultElement;
 import ai.vital.vitalservice.query.ResultList;
 import ai.vital.vitalservice.query.VitalGraphQuery;
+import ai.vital.vitalservice.query.VitalGraphQueryTypeCriterion;
 import ai.vital.vitalservice.query.VitalSelectQuery;
 import ai.vital.vitalsigns.VitalSigns;
 import ai.vital.vitalsigns.classes.ClassMetadata;
@@ -284,7 +285,6 @@ public class Application {
 		return false;
 	}
 
-	@SuppressWarnings("unchecked")
 	public ResultList getConnections(String uri_str, String typeURI, int offset, int limit) {
 
 		log.info("Getting connections, URI: {}, typeURI: {}, offset: {}, limit: {}", new Object[]{uri_str, typeURI, offset, limit});
@@ -356,32 +356,56 @@ public class Application {
 		}
 		*/
 
+		List<Class<? extends VITAL_Node>> allNodeTypes = VitalAICytoscapePlugin.getAllNodeTypes(); 
 		List<Class<? extends VITAL_Node>> nodeTypes = VitalAICytoscapePlugin.getSelectedNodeTypes();
+//		log.info("Selected nodeTypes [{}]: {}", nodeTypes.size(), nodeTypes.toString());
 		if(nodeTypes.isEmpty()) {
 			log.error("No node types selected");
+			rs.setLimit(-1);
 			return rs;
 		}
 		
+		List<Class<? extends VITAL_Edge>> allEdgeTypes = VitalAICytoscapePlugin.getAllEdgeTypes();
 		List<Class<? extends VITAL_Edge>> edgeTypes = VitalAICytoscapePlugin.getSelectedEdgeTypes();
+//		log.info("Selected edgeTypes [{}]: {}: ", edgeTypes.size(), edgeTypes.toString());
 		if(edgeTypes.isEmpty()) {
 			log.error("No edge types selected");
+			rs.setLimit(-1);
 			return rs;
 		}
 		
 		
-		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
-			fClasses = edgeTypes;
-		}
-		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
-			rClasses = edgeTypes;
-		}
+		boolean forward = direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing;
+		
+		boolean reverse = direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming;
 		
 		
-		if(fClasses.size() == 0 && rClasses.size() == 0) {
-//			log.warn("No path classes found, {}", typeURI);
-//			return rs;
+		if(allEdgeTypes.size() == edgeTypes.size()) {
+			//empty constraints
+			log.info("all edge types optimization enabled");
+		} else {
+			//check direction and append type constraints
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+				fClasses = edgeTypes;
+			}
+			if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+				rClasses = edgeTypes;
+			}
+			
 		}
+		
+		if(allNodeTypes.size() == nodeTypes.size()) {
+			//empty constraints
+			log.info("all node types optimization enabled");
+			nodeTypes = new ArrayList<Class<? extends VITAL_Node>>();
+			
+		} else {
 
+			
+		}
+		
+		
+		
 //		List<VitalSegment> serviceSegments = new ArrayList<VitalSegment>();
 //		try {
 //			serviceSegments = getServiceSegments();
@@ -390,21 +414,21 @@ public class Application {
 		
 		
 		
-		//XXX temporarily override f and r classes
-		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
-			fClasses.add(Edge_hasChildCategory.class);
-		} else {
-			fClasses.clear();
-		}
+//		//XXX temporarily override f and r classes
+//		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Outgoing) {
+//			fClasses.add(Edge_hasChildCategory.class);
+//		} else {
+//			fClasses.clear();
+//		}
+//		
+//		//XXX temporarily override f and r classes
+//		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
+//			rClasses.add(Edge_hasChildCategory.class);
+//		} else {
+//			rClasses.clear();
+//		}
 		
-		//XXX temporarily override f and r classes
-		if(direction == ExpansionDirection.Both || direction == ExpansionDirection.Incoming) {
-			rClasses.add(Edge_hasChildCategory.class);
-		} else {
-			rClasses.clear();
-		}
-		
-		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, fClasses, rClasses, nodeTypes);
+		VitalGraphQuery vgq = Queries.connectionsQueyGraph(new ArrayList<VitalSegment>(), uri_str, depth, offset, limit, forward, reverse, fClasses, rClasses, nodeTypes);
 		
 		
 		//XXX path query

@@ -592,8 +592,18 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 		return singleton.pathsTab.getSelectedEdgeTypes();
 	}
 	
+	public static List<Class<? extends VITAL_Edge>> getAllEdgeTypes() {
+		if(singleton == null || singleton.pathsTab == null) return Collections.emptyList();
+		return singleton.pathsTab.getAllEdgeTypes();
+	}
+	
 	public static List<Class<? extends VITAL_Node>> getSelectedNodeTypes() {
 		if(singleton == null || singleton.pathsTab == null) return Collections.emptyList();
 		return singleton.pathsTab.getSelectedNodeTypes();
+	}
+	
+	public static List<Class<? extends VITAL_Node>> getAllNodeTypes() {
+		if(singleton == null || singleton.pathsTab == null) return Collections.emptyList();
+		return singleton.pathsTab.getAllNodeTypes();
 	}
 }

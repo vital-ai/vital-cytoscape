@@ -134,7 +134,7 @@ public class Application {
 				throw new Exception("VitalSigns config file is invalid: " + e.getLocalizedMessage());
 			}
 			
-			File coreModelFile = new File(vitalHome, "vital-ontology/" + VitalCoreOntology.FILE_NAME);
+			File coreModelFile = new File(vitalHome, "vital-ontology/" + VitalCoreOntology.getFileName());
 //			File coreOwvitalHome
 			
 			if(!coreModelFile.exists()) {
@@ -409,7 +409,7 @@ public class Application {
 		List<VitalGraphQueryTypeCriterion> exclusiveEdgeTypes = new ArrayList<VitalGraphQueryTypeCriterion>();
 		List<VitalGraphQueryTypeCriterion> exclusiveNodeTypes = new ArrayList<VitalGraphQueryTypeCriterion>();
 		
-		if(EndpointType.ALLEGROGRAPH == Application.get().getVitalService().getEndpointType() ) {
+		if(true /*EndpointType.ALLEGROGRAPH == Application.get().getVitalService().getEndpointType()*/) {
 			
 			if(allEdgeTypes.size() != edgeTypes.size() && edgeTypes.size() > allEdgeTypes.size()  / 2) {
 				

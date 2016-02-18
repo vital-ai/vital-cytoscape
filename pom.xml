@@ -166,6 +166,11 @@
                   <include>mysql:mysql-connector-java:*</include>
                   <include>org.postgresql:postgresql:*</include>
                   <include>com.amazon.redshift:redshift-jdbc41:*</include>
+                  
+                  <!-- HIVE JDBC for sparksql -->
+				  <include>org.apache.hive:hive-jdbc:*</include>
+				  <include>org.apache.hadoop:hadoop-common:*</include>
+                  
                 </includes>
                 
               </artifactSet>

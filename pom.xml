@@ -171,6 +171,16 @@
 				  <include>org.apache.hive:hive-jdbc:*</include>
 				  <include>org.apache.hadoop:hadoop-common:*</include>
                   
+                  <!-- Amazon JDBC  -->
+                  <include>com.amazon.hive:hive-jdbc41:*</include>
+                  <include>com.amazon.hive:hive-metastore:*</include>
+                  <include>com.amazon.hive:hive-service:*</include>
+                  <include>com.amazon.hive:ql:*</include>
+                  <include>com.amazon.hive:tcli-service-client:*</include>
+                  <include>org.apache.thrift:libfb303:*</include>
+                  <include>org.apache.thrift:libthrift:*</include>
+                  <include>org.apache.zookeeper:zookeeper:*</include>
+                  
                 </includes>
                 
               </artifactSet>

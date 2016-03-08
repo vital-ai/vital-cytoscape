@@ -963,17 +963,35 @@ public class Utils {
 		createIfNotExists(Attributes.edgeTypeURI, String.class, r);
 		r.set(Attributes.edgeTypeURI, VitalSigns.get().getClassesRegistry().getClassURI(relation.getClass()));
 		
-		String sourceURI = relation.getSourceURI();
-		if(sourceURI != null) {
-			createIfNotExists(Attributes.edgeSourceURI, String.class, r);
-			r.set(Attributes.edgeSourceURI, sourceURI);
+//		String sourceURI = relation.getSourceURI();
+//		if(sourceURI != null) {
+//			createIfNotExists(Attributes.edgeSourceURI, String.class, r);
+//			r.set(Attributes.edgeSourceURI, sourceURI);
+//		}
+//		
+//		String destinationURI = relation.getDestinationURI();
+//		if(destinationURI != null) {
+//			createIfNotExists(Attributes.edgeDestinationURI, String.class, r);
+//			r.set(Attributes.edgeDestinationURI, destinationURI);
+//		}
+		
+		
+//		createIfNotExists(Attributes.canonicalName, String.class, nodeAttributes);
+		String resolvedName = PropertyUtils.resolveName(relation);
+//		nodeAttributes.set(Attributes.canonicalName, resolvedName);
+		createIfNotExists(Attributes.name, String.class, r);
+		r.set(Attributes.name, resolvedName);
+		
+		
+		for( Iterator<Entry<String, IProperty>> iterator = relation.getPropertiesMap().entrySet().iterator(); iterator.hasNext(); ) {
+			
+			Entry<String, IProperty> next = iterator.next();
+			
+			String propURI = next.getKey();
+			
+			setProperty(r, propURI, next.getValue());
 		}
 		
-		String destinationURI = relation.getDestinationURI();
-		if(destinationURI != null) {
-			createIfNotExists(Attributes.edgeDestinationURI, String.class, r);
-			r.set(Attributes.edgeDestinationURI, destinationURI);
-		}
 		
 	}
 

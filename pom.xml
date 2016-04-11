@@ -5,14 +5,14 @@
 		<bundle.symbolicName>ai.vital.cytoscape.app</bundle.symbolicName>
 		<bundle.namespace>ai.vital.cytoscape.app</bundle.namespace>
 		
-		<vital.version>0.2.302</vital.version>
+		<vital.version>0.2.303</vital.version>
 		
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>vital-ai</groupId>
 	<artifactId>vital-cytoscape</artifactId>
-	<version>0.2.302</version>
+	<version>0.2.303</version>
 
 	<name>Vital AI Graph Visualization</name>
 	

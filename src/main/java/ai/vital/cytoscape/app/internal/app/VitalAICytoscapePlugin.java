@@ -545,6 +545,10 @@ public class VitalAICytoscapePlugin extends Thread implements LoginListener, Pro
 	public static CyNetworkViewManager getNetworkViewManager() {
 		return singleton.cyNetworkViewManager;
 	}
+	
+	public static CyApplicationManager getApplicationManager() {
+		return singleton.cyApplicationManager;
+	}
 
 	public static CyNetworkView getCurrentNetworkView() {
 		return singleton.cyApplicationManager.getCurrentNetworkView();

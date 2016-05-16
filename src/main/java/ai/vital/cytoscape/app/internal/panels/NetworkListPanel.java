@@ -153,10 +153,14 @@ public class NetworkListPanel extends JPanel implements ItemListener {
 			
 			VitalAICytoscapePlugin.getNetworkManager().addNetwork(createNetwork);
 			
+			VitalAICytoscapePlugin.getApplicationManager().setCurrentNetwork(createNetwork);
+			
 			
 			CyNetworkView createNetworkView = VitalAICytoscapePlugin.getNetworkViewFactory().createNetworkView(createNetwork);
 			
 			VitalAICytoscapePlugin.getNetworkViewManager().addNetworkView(createNetworkView);
+			
+			VitalAICytoscapePlugin.getApplicationManager().setCurrentNetworkView(createNetworkView);
 			
 			
 //			CyNetworkView networkView = Cytoscape.getNetworkView(networkID);
